@@ -13,7 +13,7 @@ import java.util.Objects;
 import org.joda.time.Period;
 
 @Entity
-public class CampaignRecurrence {
+public class CampaignRecord {
 
     @Unique
     private String name;
@@ -31,7 +31,7 @@ public class CampaignRecurrence {
 
         campaign.setMessageRecords(messages);
         campaign.setName(name);
-        campaign.setCampaignRecurrence(this);
+        campaign.setCampaignRecord(this);
 
         return campaign;
     }
@@ -69,7 +69,7 @@ public class CampaignRecurrence {
     }
 
     @Ignore
-    public void updateFrom(CampaignRecurrence other) {
+    public void updateFrom(CampaignRecord other) {
         name = other.name;
         messages = other.messages;
         campaignType = other.campaignType;
@@ -85,7 +85,7 @@ public class CampaignRecurrence {
             return false;
         }
 
-        CampaignRecurrence other = (CampaignRecurrence) o;
+        CampaignRecord other = (CampaignRecord) o;
 
         return Objects.equals(this.campaignType, other.campaignType) && Objects.equals(this.maxDuration, other.maxDuration)
                 && Objects.equals(this.messages, other.messages) && Objects.equals(this.name, other.name);

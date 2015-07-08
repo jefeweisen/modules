@@ -2,7 +2,6 @@ package org.motechproject.messagecampaign.domain.campaign;
 
 import org.joda.time.Period;
 import org.motechproject.commons.date.model.Time;
-import org.motechproject.commons.date.util.JodaFormatter;
 import org.motechproject.messagecampaign.domain.message.CampaignMessage;
 import org.motechproject.messagecampaign.domain.message.CampaignMessageRecord;
 import org.motechproject.messagecampaign.exception.CampaignValidationException;
@@ -13,7 +12,7 @@ import java.util.List;
 public abstract class Campaign {
     private String name;
     private List<CampaignMessage> messages;
-    private CampaignRecurrence campaignRecurrence;
+    private CampaignRecord campaignRecord;
 
     public Campaign () {
 
@@ -46,11 +45,11 @@ public abstract class Campaign {
     }
 
     public Period getMaxDuration() {
-        return getCampaignRecurrence().getMaxDuration();
+        return getCampaignRecord().getMaxDuration();
     }
 
     public void setMaxDuration(Period maxDuration) {
-        getCampaignRecurrence().setMaxDuration(maxDuration);
+        getCampaignRecord().setMaxDuration(maxDuration);
     }
 
     public void setMessageRecords(List<CampaignMessageRecord> messageRecords) {
@@ -82,11 +81,11 @@ public abstract class Campaign {
     public void validate2(CampaignMessage cm) {
     }
 
-    public CampaignRecurrence getCampaignRecurrence() {
-        return campaignRecurrence;
+    public CampaignRecord getCampaignRecord() {
+        return campaignRecord;
     }
 
-    public void setCampaignRecurrence(CampaignRecurrence campaignRecurrence) {
-        this.campaignRecurrence = campaignRecurrence;
+    public void setCampaignRecord(CampaignRecord campaignRecord) {
+        this.campaignRecord = campaignRecord;
     }
 }

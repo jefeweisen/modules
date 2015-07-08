@@ -2,7 +2,7 @@ package org.motechproject.messagecampaign.service;
 
 import org.joda.time.DateTime;
 import org.motechproject.messagecampaign.contract.CampaignRequest;
-import org.motechproject.messagecampaign.domain.campaign.CampaignRecurrence;
+import org.motechproject.messagecampaign.domain.campaign.CampaignRecord;
 
 import java.io.IOException;
 import java.util.List;
@@ -55,7 +55,7 @@ public interface MessageCampaignService {
      */
     void stopAll(CampaignEnrollmentsQuery query);
 
-    void saveCampaign(CampaignRecurrence campaign);
+    void saveCampaign(CampaignRecord campaign);
 
     void deleteCampaign(String campaignName);
 
@@ -69,9 +69,9 @@ public interface MessageCampaignService {
      */
     String getNextCampaignMessage(String campaignName, String externalId);
 
-    CampaignRecurrence getCampaignRecord(String campaignName);
+    CampaignRecord getCampaignRecord(String campaignName);
 
-    List<CampaignRecurrence> getAllCampaignRecords();
+    List<CampaignRecord> getAllCampaignRecords();
 
     void campaignCompleted(String externalId, String campaignName);
 

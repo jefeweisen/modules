@@ -10,7 +10,7 @@ import org.motechproject.messagecampaign.EventKeys;
 import org.motechproject.messagecampaign.contract.CampaignRequest;
 import org.motechproject.messagecampaign.dao.CampaignEnrollmentDataService;
 import org.motechproject.messagecampaign.dao.CampaignRecordService;
-import org.motechproject.messagecampaign.domain.campaign.CampaignRecurrence;
+import org.motechproject.messagecampaign.domain.campaign.CampaignRecord;
 import org.motechproject.messagecampaign.exception.CampaignNotFoundException;
 import org.motechproject.messagecampaign.domain.campaign.Campaign;
 import org.motechproject.messagecampaign.domain.campaign.CampaignEnrollment;
@@ -161,8 +161,8 @@ public class MessageCampaignServiceImpl implements MessageCampaignService {
     }
 
     @Override
-    public void saveCampaign(CampaignRecurrence campaign) {
-        CampaignRecurrence record = campaignRecordService.findByName(campaign.getName());
+    public void saveCampaign(CampaignRecord campaign) {
+        CampaignRecord record = campaignRecordService.findByName(campaign.getName());
         if (record == null) {
             campaignRecordService.create(campaign);
         }
@@ -170,15 +170,15 @@ public class MessageCampaignServiceImpl implements MessageCampaignService {
 
     @Override
     public void deleteCampaign(String campaignName) {
-        CampaignRecurrence campaignRecurrence = campaignRecordService.findByName(campaignName);
+        CampaignRecord campaignRecord = campaignRecordService.findByName(campaignName);
 
-        if (campaignRecurrence == null) {
+        if (campaignRecord == null) {
             throw new CampaignNotFoundException("Campaign not found: " + campaignName);
         } else {
             CampaignEnrollmentsQuery enrollmentsQuery = new CampaignEnrollmentsQuery().withCampaignName(campaignName);
             stopAll(enrollmentsQuery, true);
 
-            campaignRecordService.delete(campaignRecurrence);
+            campaignRecordService.delete(campaignRecord);
         }
     }
 
@@ -241,12 +241,12 @@ public class MessageCampaignServiceImpl implements MessageCampaignService {
     }
 
     @Override
-    public CampaignRecurrence getCampaignRecord(String campaignName) {
+    public CampaignRecord getCampaignRecord(String campaignName) {
         return campaignRecordService.findByName(campaignName);
     }
 
     @Override
-    public List<CampaignRecurrence> getAllCampaignRecords() {
+    public List<CampaignRecord> getAllCampaignRecords() {
         return campaignRecordService.retrieveAll();
     }
 
@@ -258,10 +258,10 @@ public class MessageCampaignServiceImpl implements MessageCampaignService {
     @Override
     public void loadCampaigns() throws IOException {
         try (InputStream inputStream = settingsFacade.getRawConfig(MESSAGE_CAMPAIGNS_JSON_FILENAME)) {
-            List<CampaignRecurrence> records = new CampaignJsonLoader().loadCampaigns(inputStream);
-            for (CampaignRecurrence campaign : records) {
+            List<CampaignRecord> records = new CampaignJsonLoader().loadCampaigns(inputStream);
+            for (CampaignRecord campaign : records) {
                 campaign.toCampaign().validate();
-                CampaignRecurrence record = campaignRecordService.findByName(campaign.getName());
+                CampaignRecord record = campaignRecordService.findByName(campaign.getName());
                 if (record == null) {
                     campaignRecordService.create(campaign);
                 } else {
@@ -286,8 +286,8 @@ public class MessageCampaignServiceImpl implements MessageCampaignService {
     @PostConstruct
     public void loadCampaignsJson() {
         try (InputStream inputStream = settingsFacade.getRawConfig(MESSAGE_CAMPAIGNS_JSON_FILENAME)) {
-            List<CampaignRecurrence> records = new CampaignJsonLoader().loadCampaigns(inputStream);
-            for (CampaignRecurrence record : records) {
+            List<CampaignRecord> records = new CampaignJsonLoader().loadCampaigns(inputStream);
+            for (CampaignRecord record : records) {
                 record.toCampaign().validate();
                 if(campaignRecordService.findByName(record.getName()) == null) {
                     campaignRecordService.create(record);
