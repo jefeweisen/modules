@@ -4,12 +4,12 @@
     <parent>
         <artifactId>modules</artifactId>
         <groupId>org.motechproject</groupId>
-        <version>0.26-SNAPSHOT</version>
+        <version>1.0-SNAPSHOT</version>
         <relativePath>../</relativePath>
     </parent>
 
     <modelVersion>4.0.0</modelVersion>
-    <version>0.26-SNAPSHOT</version>
+    <version>1.0-SNAPSHOT</version>
     <description>IVR Module</description>
     <artifactId>ivr</artifactId>
     <name>IVR Module</name>
@@ -29,6 +29,11 @@
         <dependency>
             <groupId>${motech.groupId}</groupId>
             <artifactId>motech-admin</artifactId>
+            <version>${motech.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>${motech.groupId}</groupId>
+            <artifactId>motech-scheduler</artifactId>
             <version>${motech.version}</version>
         </dependency>
         <dependency>
@@ -76,8 +81,16 @@
                         <Context-Path>ivr</Context-Path>
                         <Resource-Path>ivr/resources</Resource-Path>
                         <Import-Package>
+                            net.sf.cglib.core,
+                            net.sf.cglib.proxy,
+                            net.sf.cglib.reflect,
+                            org.aopalliance.aop,
+                            org.springframework.aop,
+                            org.springframework.aop.framework,
                             org.motechproject.config.service,
                             org.motechproject.mds.service,
+                            org.motechproject.admin.domain,
+                            org.motechproject.admin.messages,
                             *
                         </Import-Package>
                         <Export-Package>
@@ -141,4 +154,31 @@
 
         </plugins>
     </build>
+
+    <!-- Clean raw configs directory in IT profile -->
+
+    <profiles>
+        <profile>
+            <id>IT</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-clean-plugin</artifactId>
+                        <version>2.6.1</version>
+                        <configuration>
+                            <filesets>
+                                <fileset>
+                                    <directory>${user.home}/.motech/config/org.motechproject.ivr/raw</directory>
+                                    <includes>
+                                        <include>*.json</include>
+                                    </includes>
+                                    <followSymlinks>false</followSymlinks>
+                                </fileset>
+                            </filesets>
+                        </configuration>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+    </profiles>
 </project>

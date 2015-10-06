@@ -1,14 +1,18 @@
 package org.motechproject.ivr.domain;
 
+import org.apache.commons.collections.MapUtils;
 import org.joda.time.format.DateTimeFormat;
 import org.joda.time.format.DateTimeFormatter;
 import org.motechproject.commons.date.util.DateUtil;
+import org.motechproject.ivr.util.Constants;
+import org.motechproject.mds.annotations.Access;
 import org.motechproject.mds.annotations.CrudEvents;
 import org.motechproject.mds.annotations.Entity;
 import org.motechproject.mds.annotations.Field;
 import org.motechproject.mds.annotations.Ignore;
 import org.motechproject.mds.annotations.UIDisplayable;
 import org.motechproject.mds.event.CrudEventType;
+import org.motechproject.mds.util.SecurityMode;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -20,8 +24,9 @@ import java.util.Objects;
  * The call detail record is the object persisted for every call from and to MOTECH by the IVR module.
  * It represents the details of the call, and is stored in the database for auditing purposes.
  */
-@Entity
+@Entity(nonEditable = true)
 @CrudEvents(CrudEventType.NONE)
+@Access(value = SecurityMode.PERMISSIONS, members = {Constants.VIEW_IVR_LOGS_PERMISSION})
 public class CallDetailRecord {
 
     private static final int COL1 = 0;
@@ -36,6 +41,8 @@ public class CallDetailRecord {
     private static final int COL10 = 9;
     private static final int COL11 = 10;
     private static final int COL12 = 11;
+    private static final int COL13 = 12;
+    private static final int COL14 = 13;
     private static final int MAX_ENTITY_STRING_LENGTH = 255;
     private static final DateTimeFormatter DT_FORMATTER = DateTimeFormat.forPattern("yyyy-MM-dd HH:mm:ss.SSSS");
     private static final Logger LOGGER = LoggerFactory.getLogger(CallDetailRecord.class);
@@ -47,7 +54,7 @@ public class CallDetailRecord {
     @UIDisplayable(position = COL1)
     private long id;
 
-    @Field
+    @Field(required = true)
     @UIDisplayable(position = COL11)
     private String motechTimestamp;
 
@@ -55,7 +62,7 @@ public class CallDetailRecord {
     @UIDisplayable(position = COL12)
     private String providerTimestamp;
 
-    @Field
+    @Field(required = true)
     @UIDisplayable(position = COL2)
     private String configName;
 
@@ -91,6 +98,14 @@ public class CallDetailRecord {
     @UIDisplayable(position = COL8)
     private Map<String, String> providerExtraData;
 
+    @Field
+    @UIDisplayable(position = COL13)
+    private String callDuration;
+
+    @Field
+    @UIDisplayable(position = COL14)
+    private String messagePercentListened;
+
     /**
      * Creates a new CallDetailRecord and sets the motechTimestamp value to the current datetime.
      */
@@ -115,7 +130,7 @@ public class CallDetailRecord {
     public CallDetailRecord(String configName,  //NO CHECKSTYLE ParameterNumber
                             String providerTimestamp, String from, String to, CallDirection callDirection,
                             String callStatus, String templateName, String motechCallId, String providerCallId,
-                            Map<String, String> providerExtraData) {
+                            Map<String, String> providerExtraData, String callDuration, String messagePercentListened) {
         this();
         this.configName = configName;
         this.providerTimestamp = providerTimestamp;
@@ -129,6 +144,8 @@ public class CallDetailRecord {
         if (providerExtraData != null) {
             this.providerExtraData = providerExtraData;
         }
+        this.callDuration = callDuration;
+        this.messagePercentListened = messagePercentListened;
     }
 
     /**
@@ -279,6 +296,20 @@ public class CallDetailRecord {
     }
 
     /**
+     * @return the duration of this call
+     */
+    public String getCallDuration() {
+        return callDuration;
+    }
+
+    /**
+     * @return the percent listened of the message
+     */
+    public String getMessagePercentListened() {
+        return messagePercentListened;
+    }
+
+    /**
      * When receiving call detail information from an IVR provider the specific call details must be mapped from
      * what the provider sends back to MOTECH and a CallDetailRecord object. This method will find which field on the
      * given callDetailRecord matches the given key and set service to the given value. If there is no matching
@@ -286,8 +317,9 @@ public class CallDetailRecord {
      *
      * @param key the name of the field to set
      * @param val the value to set
+     * @param callStatusMapping the map which contains mapping for call status. It is used to change status value in the cdr log.
      */
-    public void setField(String key, String val) {
+    public void setField(String key, String val, Map<String, String> callStatusMapping) {
         String value;
 
         if (val.length() > MAX_ENTITY_STRING_LENGTH) {
@@ -303,7 +335,7 @@ public class CallDetailRecord {
             Object object;
             try {
                 switch (key) {
-                    case  "callDirection":
+                    case "callDirection":
                         try {
                             object = CallDirection.valueOf(value);
                         } catch (IllegalArgumentException e) {
@@ -312,6 +344,13 @@ public class CallDetailRecord {
                             providerExtraData.put(key, value);
                             object = CallDirection.UNKNOWN;
                         }
+                        break;
+                    case "callStatus":
+                        Object statusValue = value;
+                        if (MapUtils.isNotEmpty(callStatusMapping)) {
+                            statusValue = callStatusMapping.get(value.toString()) == null ? value : callStatusMapping.get(value.toString());
+                        }
+                        object = statusValue;
                         break;
                     default:
                         object = value;
@@ -379,6 +418,12 @@ public class CallDetailRecord {
         if (to != null ? !to.equals(that.to) : that.to != null) {
             return false;
         }
+        if (callDuration != null ? !callDuration.equals(that.callDuration) : that.callDuration != null) {
+            return false;
+        }
+        if (messagePercentListened != null ? !messagePercentListened.equals(that.messagePercentListened) : that.messagePercentListened != null) {
+            return false;
+        }
 
         return true;
     }
@@ -396,6 +441,8 @@ public class CallDetailRecord {
         result = 31 * result + (motechCallId != null ? motechCallId.hashCode() : 0);
         result = 31 * result + (providerCallId != null ? providerCallId.hashCode() : 0);
         result = 31 * result + (providerExtraData != null ? providerExtraData.hashCode() : 0);
+        result = 31 * result + (callDuration != null ? callDuration.hashCode() : 0);
+        result = 31 * result + (messagePercentListened != null ? messagePercentListened.hashCode() : 0);
         return result;
     }
 
@@ -413,6 +460,8 @@ public class CallDetailRecord {
                 ", motechCallId='" + motechCallId + '\'' +
                 ", providerCallId='" + providerCallId + '\'' +
                 ", providerExtraData=" + providerExtraData +
+                ", callDuration=" + callDuration +
+                ", messagePercentListened=" + messagePercentListened +
                 '}';
     }
 }

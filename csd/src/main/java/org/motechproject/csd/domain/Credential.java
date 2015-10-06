@@ -2,10 +2,13 @@ package org.motechproject.csd.domain;
 
 import org.joda.time.DateTime;
 import org.motechproject.csd.adapters.DateAdapter;
+import org.motechproject.csd.constants.CSDConstants;
+import org.motechproject.mds.annotations.Access;
 import org.motechproject.mds.annotations.Cascade;
 import org.motechproject.mds.annotations.Entity;
 import org.motechproject.mds.annotations.Field;
 import org.motechproject.mds.annotations.UIDisplayable;
+import org.motechproject.mds.util.SecurityMode;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -43,15 +46,16 @@ import java.util.Set;
 @Entity
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType(propOrder = { "codedType", "number", "issuingAuthority", "credentialIssueDate", "credentialRenewalDate", "extensions" })
+@Access(value = SecurityMode.PERMISSIONS, members = {CSDConstants.MANAGE_CSD})
 public class Credential extends AbstractID {
 
     @UIDisplayable(position = 0)
-    @Field(required = true)
+    @Field(required = true, tooltip = "The code from a predefined credential list.")
     @Cascade(delete = true)
     private CodedType codedType;
 
     @UIDisplayable(position = 1)
-    @Field(required = true)
+    @Field(required = true, tooltip = "The number provided with this credential (i.e. a state or national license number).")
     private String number;
 
     @UIDisplayable(position = 2)
@@ -59,14 +63,14 @@ public class Credential extends AbstractID {
     private String issuingAuthority;
 
     @UIDisplayable(position = 3)
-    @Field(tooltip = "Only date and not time matters in this entity")
+    @Field(tooltip = "The date this credential was issued.")
     private DateTime credentialIssueDate;
 
     @UIDisplayable(position = 4)
-    @Field
+    @Field(tooltip = "The date this credential must be renewed if applicable.")
     private DateTime credentialRenewalDate;
 
-    @Field(name = "credential_extensions")
+    @Field(name = "credential_extensions", tooltip = "This is a locally defined extension for this entity.")
     @Cascade(delete = true)
     private Set<Extension> extensions = new HashSet<>();
 

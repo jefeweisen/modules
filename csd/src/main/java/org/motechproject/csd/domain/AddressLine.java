@@ -1,8 +1,11 @@
 package org.motechproject.csd.domain;
 
+import org.motechproject.csd.constants.CSDConstants;
+import org.motechproject.mds.annotations.Access;
 import org.motechproject.mds.annotations.Entity;
 import org.motechproject.mds.annotations.Field;
 import org.motechproject.mds.annotations.UIDisplayable;
+import org.motechproject.mds.util.SecurityMode;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -30,14 +33,15 @@ import javax.xml.bind.annotation.XmlValue;
 @Entity
 @XmlType
 @XmlAccessorType(XmlAccessType.NONE)
+@Access(value = SecurityMode.PERMISSIONS, members = {CSDConstants.MANAGE_CSD})
 public class AddressLine extends AbstractID {
 
     @UIDisplayable(position = 0)
-    @Field
+    @Field(tooltip = "This is the value of that component attribute (i.e. 1234 Main St)")
     private String value = "";
 
     @UIDisplayable(position = 1)
-    @Field
+    @Field(tooltip = "This is the component attribute for this address line (i.e. Street Address, City, Provence, Country, Postal Code).")
     private String component;
 
 

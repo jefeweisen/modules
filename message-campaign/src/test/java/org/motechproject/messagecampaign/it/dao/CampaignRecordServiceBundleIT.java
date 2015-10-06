@@ -10,7 +10,7 @@ import org.motechproject.messagecampaign.dao.CampaignMessageRecordService;
 import org.motechproject.messagecampaign.dao.CampaignRecordService;
 import org.motechproject.messagecampaign.domain.campaign.*;
 import org.motechproject.messagecampaign.domain.message.CampaignMessage;
-import org.motechproject.messagecampaign.domain.message.CampaignMessageRecord;
+import org.motechproject.messagecampaign.domain.campaign.CampaignMessageRecord;
 import org.motechproject.messagecampaign.domain.campaign.CampaignRecurrence;
 import org.motechproject.testing.osgi.BasePaxIT;
 import org.motechproject.testing.osgi.container.MotechNativeTestContainerFactory;
@@ -18,8 +18,11 @@ import org.ops4j.pax.exam.ExamFactory;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerSuite;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 
 import javax.inject.Inject;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 
@@ -84,21 +87,27 @@ public class CampaignRecordServiceBundleIT extends BasePaxIT {
     @Test
     public void shouldUpdateRecord() {
 
-        CampaignRecurrence campaign = createCampaignRecord();
-        CampaignRecurrence campaign2 = createCampaignRecord();
+        final CampaignRecord campaign = createCampaignRecord();
+        final CampaignRecord campaign2 = createCampaignRecord();
 
         // add
         campaignRecordService.create(campaign);
 
         assertEquals(campaign, campaignRecordService.findByName(campaign.getName()));
 
-        // update
-        campaign2.setMaxDuration(new Period("20"));
-        campaign.updateFrom(campaign2);
+        campaignRecordService.doInTransaction(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                // update
+                CampaignRecord campaignToUpdate = campaignRecordService.findByName(campaign.getName());
+                campaign2.setMaxDuration("20 week");
+                campaignToUpdate.updateFrom(campaign2);
 
-        campaign = campaignRecordService.update(campaign);
+                campaignRecordService.update(campaignToUpdate);
+            }
+        });
 
-        assertEquals(campaign.getMaxDuration(), campaignRecordService.findByName(campaign.getName()).getMaxDuration());
+        assertEquals("20 week", campaignRecordService.findByName(campaign.getName()).getMaxDuration());
 
         campaignRecordService.delete(campaign);
     }
@@ -163,16 +172,17 @@ public class CampaignRecordServiceBundleIT extends BasePaxIT {
     private CampaignRecurrence createCampaignRecord() {
         CampaignRecurrence campaign = new CampaignRecurrence();
         campaign.setCampaignType(CampaignType.ABSOLUTE);
-        campaign.setMaxDuration(new Period("10"));
+        campaign.setMaxDuration("10 week");
         campaign.setName("CampaignName");
 
         CampaignMessageRecord message = new CampaignMessageRecord();
         message.setDate(LocalDate.now());
-        message.setStartTime("20:44:00");
+        message.setMessageType(CampaignType.ABSOLUTE);
+        message.setStartTime("20:44");
         message.setMessageKey("key");
-        message.setLanguages(asList("lang1", "lang2", "lang3"));
+        message.setLanguages(new ArrayList<>(asList("lang1", "lang2", "lang3")));
 
-        campaign.setMessages(asList(message));
+        campaign.setMessages(new ArrayList<>(asList(message)));
 
         return campaign;
     }

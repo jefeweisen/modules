@@ -1,5 +1,12 @@
 package org.motechproject.ivr.service.impl;
 
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonPrimitive;
+import com.google.gson.JsonSyntaxException;
 import org.apache.commons.io.IOUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
@@ -11,6 +18,8 @@ import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.auth.BasicScheme;
 import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
@@ -77,13 +86,15 @@ public class OutboundCallServiceImpl implements OutboundCallService {
         LOGGER.debug(String.format("addCallDetailRecord(callStatus = %s, config = %s, params = %s, motechCallId = %s)",
                 callStatus, config.getName(), params.toString(), motechCallId));
 
-        CallDetailRecord callDetailRecord = new CallDetailRecord(config.getName(), null, null, null, CallDirection.OUTBOUND, callStatus, null, motechCallId, null, null);
+        CallDetailRecord callDetailRecord = new CallDetailRecord(config.getName(), null, null, null, CallDirection.OUTBOUND,
+                callStatus, null, motechCallId, null, null, null, null);
 
         for (Map.Entry<String, String> entry : params.entrySet()) {
             if (config.shouldIgnoreField(entry.getKey())) {
                 LOGGER.debug("Ignoring provider field '{}' with value '{}'", entry.getKey(), entry.getValue());
             } else {
-                callDetailRecord.setField(config.mapStatusField(entry.getKey()), entry.getValue());
+                //Default status like CALL_INITIATED will be overwritten by value provided in params
+                callDetailRecord.setField(config.mapStatusField(entry.getKey()), entry.getValue(), config.getCallStatusMapping());
             }
         }
 
@@ -208,13 +219,29 @@ public class OutboundCallServiceImpl implements OutboundCallService {
                 }
                 request = new HttpGet(builder.build());
             } else {
-                ArrayList<NameValuePair> postParameters = new ArrayList<>();
-                for (Map.Entry<String, String> entry : params.entrySet()) {
-                    builder.setParameter(entry.getKey(), entry.getValue());
-                    postParameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
-                }
                 HttpPost post = new HttpPost(uri);
-                post.setEntity(new UrlEncodedFormEntity(postParameters));
+                if (config.isJsonRequest()) {
+                    Gson gson = new GsonBuilder().serializeNulls().create();
+                    JsonObject jsonObject = new JsonObject();
+                    for (Map.Entry<String, String> entry : params.entrySet()) {
+                        JsonElement obj;
+                        try {
+                            obj = new JsonParser().parse(entry.getValue());
+                        } catch (JsonSyntaxException e) {
+                            obj = new JsonPrimitive(entry.getValue());
+                        }
+                        jsonObject.add(entry.getKey(), obj);
+                    }
+                    String json = gson.toJson(jsonObject);
+                    post.setEntity(new StringEntity(json, ContentType.APPLICATION_JSON));
+                } else {
+                    ArrayList<NameValuePair> postParameters = new ArrayList<>();
+                    for (Map.Entry<String, String> entry : params.entrySet()) {
+                        builder.setParameter(entry.getKey(), entry.getValue());
+                        postParameters.add(new BasicNameValuePair(entry.getKey(), entry.getValue()));
+                    }
+                    post.setEntity(new UrlEncodedFormEntity(postParameters));
+                }
                 request = post;
             }
         } catch (URISyntaxException | UnsupportedEncodingException e) {

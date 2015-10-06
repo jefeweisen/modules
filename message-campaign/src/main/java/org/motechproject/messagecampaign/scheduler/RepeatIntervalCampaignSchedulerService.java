@@ -7,8 +7,8 @@ import org.motechproject.event.MotechEvent;
 import org.motechproject.messagecampaign.EventKeys;
 import org.motechproject.messagecampaign.dao.CampaignRecordService;
 import org.motechproject.messagecampaign.domain.campaign.CampaignEnrollment;
-import org.motechproject.messagecampaign.domain.campaign.RepeatIntervalCampaign;
 import org.motechproject.messagecampaign.domain.message.CampaignMessage;
+import org.motechproject.messagecampaign.domain.campaign.RepeatIntervalCampaign;
 import org.motechproject.scheduler.contract.JobId;
 import org.motechproject.scheduler.contract.RepeatingJobId;
 import org.motechproject.scheduler.contract.RepeatingSchedulableJob;
@@ -22,9 +22,10 @@ import java.util.Map;
 import static org.motechproject.commons.date.util.DateUtil.newDateTime;
 
 /**
- * SchedulerService responsible for (un)scheduling repeat interval campaign enrollment
+ * Scheduler service, responsible for scheduling/unscheduling jobs for the {@link RepeatIntervalCampaign}s.
+ *
+ * @see RepeatIntervalCampaign
  */
-
 @Component
 public class RepeatIntervalCampaignSchedulerService extends CampaignSchedulerService<CampaignMessage, RepeatIntervalCampaign> {
 
@@ -42,7 +43,7 @@ public class RepeatIntervalCampaignSchedulerService extends CampaignSchedulerSer
                 .setMotechEvent(motechEvent)
                 .setStartTime(start.toDate())
                 .setEndTime(end.toDate())
-                .setRepeatIntervalInMilliSeconds(campaign.getRepeatIntervalInMillis(message))
+                .setRepeatIntervalInSeconds(campaign.getRepeatIntervalInSeconds(message))
                 .setIgnorePastFiresAtStart(true)
                 .setUseOriginalFireTimeAfterMisfire(true);
         getSchedulerService().safeScheduleRepeatingJob(job);
@@ -54,6 +55,11 @@ public class RepeatIntervalCampaignSchedulerService extends CampaignSchedulerSer
         for (CampaignMessage message : campaign.getMessages()) {
             getSchedulerService().safeUnscheduleRepeatingJob(EventKeys.SEND_MESSAGE, messageJobIdFor(message.getMessageKey(), enrollment.getExternalId(), enrollment.getCampaignName()));
         }
+    }
+
+    @Override
+    public void unscheduleMessageJob(CampaignEnrollment enrollment, CampaignMessage message) {
+        getSchedulerService().safeUnscheduleRepeatingJob(EventKeys.SEND_MESSAGE, messageJobIdFor(message.getMessageKey(), enrollment.getExternalId(), enrollment.getCampaignName()));
     }
 
     @Override

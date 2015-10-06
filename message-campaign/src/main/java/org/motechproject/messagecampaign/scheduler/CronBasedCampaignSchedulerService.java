@@ -7,8 +7,8 @@ import org.motechproject.event.MotechEvent;
 import org.motechproject.messagecampaign.EventKeys;
 import org.motechproject.messagecampaign.dao.CampaignRecordService;
 import org.motechproject.messagecampaign.domain.campaign.CampaignEnrollment;
-import org.motechproject.messagecampaign.domain.campaign.CronBasedCampaign;
 import org.motechproject.messagecampaign.domain.message.CampaignMessage;
+import org.motechproject.messagecampaign.domain.campaign.CronBasedCampaign;
 import org.motechproject.scheduler.contract.CronJobId;
 import org.motechproject.scheduler.contract.CronSchedulableJob;
 import org.motechproject.scheduler.contract.JobId;
@@ -20,6 +20,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+/**
+ * Scheduler service, responsible for scheduling/unscheduling jobs for the {@link CronBasedCampaign}s.
+ *
+ * @see CronBasedCampaign
+ */
 @Component
 public class CronBasedCampaignSchedulerService extends CampaignSchedulerService<CampaignMessage, CronBasedCampaign> {
 
@@ -46,6 +51,11 @@ public class CronBasedCampaignSchedulerService extends CampaignSchedulerService<
         for (CampaignMessage message : campaign.getMessages()) {
             getSchedulerService().safeUnscheduleJob(EventKeys.SEND_MESSAGE, messageJobIdFor(message.getMessageKey(), enrollment.getExternalId(), enrollment.getCampaignName()));
         }
+    }
+
+    @Override
+    public void unscheduleMessageJob(CampaignEnrollment enrollment, CampaignMessage message) {
+        getSchedulerService().safeUnscheduleJob(EventKeys.SEND_MESSAGE, messageJobIdFor(message.getMessageKey(), enrollment.getExternalId(), enrollment.getCampaignName()));
     }
 
     @Override

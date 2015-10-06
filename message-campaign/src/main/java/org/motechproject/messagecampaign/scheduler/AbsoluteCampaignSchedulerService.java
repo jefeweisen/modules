@@ -21,6 +21,12 @@ import java.util.Map;
 
 import static org.motechproject.commons.date.util.DateUtil.newDateTime;
 
+/**
+ * Scheduler service, responsible for scheduling/unscheduling jobs for the {@link AbsoluteCampaign}s.
+ *
+ * @see AbsoluteCampaign
+ * @see AbsoluteCampaignMessage
+ */
 @Component
 public class AbsoluteCampaignSchedulerService extends CampaignSchedulerService<CampaignMessage, AbsoluteCampaign> {
 
@@ -54,6 +60,11 @@ public class AbsoluteCampaignSchedulerService extends CampaignSchedulerService<C
     }
 
     @Override
+    public void unscheduleMessageJob(CampaignEnrollment enrollment, CampaignMessage message) {
+        getSchedulerService().safeUnscheduleRunOnceJob(EventKeys.SEND_MESSAGE, messageJobIdFor(message.getMessageKey(), enrollment.getExternalId(), enrollment.getCampaignName()));
+    }
+
+    @Override
     public JobId getJobId(String messageKey, String externalId, String campaingName) {
         return new RunOnceJobId(EventKeys.SEND_MESSAGE, messageJobIdFor(messageKey, externalId, campaingName));
     }
@@ -62,7 +73,7 @@ public class AbsoluteCampaignSchedulerService extends CampaignSchedulerService<C
     protected DateTime campaignEndDate(AbsoluteCampaign campaign, CampaignEnrollment enrollment) {
         DateTime endDate = null;
         for (CampaignMessage msg : campaign.getMessages()) {
-            DateTime fireTime = DateUtil.newDateTime(campaign.getDate(msg), campaign.getStartTime(msg));
+            DateTime fireTime = DateUtil.newDateTime(campaign.getDate(msg), deliverTimeFor(enrollment, msg));
             if (endDate == null || fireTime.isAfter(endDate)) {
                 endDate = fireTime;
             }

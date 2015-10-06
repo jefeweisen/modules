@@ -5,7 +5,6 @@ import org.motechproject.commons.date.model.Time;
 import org.motechproject.commons.date.util.DateUtil;
 import org.motechproject.commons.date.util.JodaFormatter;
 import org.motechproject.messagecampaign.domain.message.CampaignMessage;
-import org.motechproject.messagecampaign.domain.message.DayOfWeek;
 import org.motechproject.messagecampaign.exception.CampaignMessageValidationException;
 import org.motechproject.messagecampaign.exception.CampaignValidationException;
 

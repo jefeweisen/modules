@@ -10,20 +10,19 @@ import org.motechproject.pillreminder.domain.Dosage;
 import org.motechproject.pillreminder.domain.PillRegimen;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * Implementation of the {@link PillReminderService}. Uses {@link PillRegimenJobScheduler} for scheduling
+ * jobs and stores information in MDS using {@link PillRegimenDataService}.
+ */
 @Component
 public class PillReminderServiceImpl implements PillReminderService {
     private PillRegimenDataService pillRegimenDataService;
     private PillRegimenJobScheduler pillRegimenJobScheduler;
 
-    @Autowired
-    public PillReminderServiceImpl(PillRegimenDataService pillRegimenDataService,
-                                   PillRegimenJobScheduler pillRegimenJobScheduler) {
-        this.pillRegimenDataService = pillRegimenDataService;
-        this.pillRegimenJobScheduler = pillRegimenJobScheduler;
-    }
-
     @Override
+    @Transactional
     public void createNew(DailyPillRegimenRequest dailyPillRegimenRequest) {
         PillRegimen pillRegimen = new PillRegimenBuilder().createDailyPillRegimenFrom(dailyPillRegimenRequest);
         pillRegimen.validate();
@@ -33,12 +32,14 @@ public class PillReminderServiceImpl implements PillReminderService {
     }
 
     @Override
+    @Transactional
     public void renew(DailyPillRegimenRequest dailyPillRegimenRequest) {
         remove(dailyPillRegimenRequest.getExternalId());
         createNew(dailyPillRegimenRequest);
     }
 
     @Override
+    @Transactional
     public void dosageStatusKnown(Long pillRegimenId, Long dosageId, LocalDate lastCapturedDate) {
         PillRegimen regimen = pillRegimenDataService.findById(pillRegimenId);
         if (regimen == null) {
@@ -57,15 +58,27 @@ public class PillReminderServiceImpl implements PillReminderService {
     }
 
     @Override
+    @Transactional
     public PillRegimenResponse getPillRegimen(String externalId) {
         PillRegimen pillRegimen = pillRegimenDataService.findByExternalId(externalId);
         return pillRegimen == null ? null : new PillRegimenResponseBuilder().createFrom(pillRegimen);
     }
 
     @Override
+    @Transactional
     public void remove(String externalID) {
         PillRegimen regimen = pillRegimenDataService.findByExternalId(externalID);
         pillRegimenJobScheduler.unscheduleJobs(regimen);
         pillRegimenDataService.delete(regimen);
+    }
+
+    @Autowired
+    public void setPillRegimenDataService(PillRegimenDataService pillRegimenDataService) {
+        this.pillRegimenDataService = pillRegimenDataService;
+    }
+
+    @Autowired
+    public void setPillRegimenJobScheduler(PillRegimenJobScheduler pillRegimenJobScheduler) {
+        this.pillRegimenJobScheduler = pillRegimenJobScheduler;
     }
 }

@@ -17,8 +17,6 @@ import org.motechproject.commcare.response.OpenRosaResponse;
 import org.motechproject.commcare.service.CommcareCaseService;
 import org.motechproject.commcare.service.CommcareConfigService;
 import org.motechproject.commons.api.json.MotechJsonReader;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -30,8 +28,6 @@ import java.util.Map;
 
 @Service
 public class CommcareCaseServiceImpl implements CommcareCaseService {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(CommcareCaseServiceImpl.class);
 
     private CaseTaskXmlConverter converter;
 
@@ -48,19 +44,6 @@ public class CommcareCaseServiceImpl implements CommcareCaseService {
         this.commcareHttpClient = commcareHttpClient;
         this.configService = configService;
         this.motechJsonReader = new MotechJsonReader();
-    }
-
-    @Override
-    public CaseInfo getCaseByCaseIdAndUserId(String caseId, String userId, String configName) {
-        CaseRequest request = new CaseRequest();
-        request.setCaseId(caseId);
-        request.setUserId(userId);
-        List<CaseJson> caseResponses = getCaseResponse(request, getConfiguration(configName)).getCases();
-        List<CaseInfo> cases = generateCasesFromCaseResponse(caseResponses, configName);
-        if (cases.size() == 0) {
-            return null;
-        }
-        return cases.get(0);
     }
 
     @Override
@@ -189,11 +172,6 @@ public class CommcareCaseServiceImpl implements CommcareCaseService {
     }
 
     @Override
-    public CaseInfo getCaseByCaseIdAndUserId(String caseId, String userId) {
-        return getCaseByCaseIdAndUserId(caseId, userId, null);
-    }
-
-    @Override
     public CaseInfo getCaseByCaseId(String caseId) {
         return getCaseByCaseId(caseId, null);
     }
@@ -265,16 +243,7 @@ public class CommcareCaseServiceImpl implements CommcareCaseService {
     }
 
     private CaseJson parseSingleCaseFromResponse(String response) {
-        CaseJson caseReturned = null;
-
-        try {
-            caseReturned = (CaseJson) motechJsonReader
-                    .readFromString(response, CaseJson.class);
-        } catch (Exception e) {
-            LOGGER.warn("Exception while trying to read in case JSON: " + e.getMessage());
-        }
-
-        return caseReturned;
+        return (CaseJson) motechJsonReader.readFromString(response, CaseJson.class);
     }
 
     private List<CaseInfo> generateCasesFromCaseResponse(List<CaseJson> caseResponses, String configName) {

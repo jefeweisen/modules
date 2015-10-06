@@ -9,6 +9,7 @@ import org.motechproject.event.MotechEvent;
 import org.motechproject.event.listener.annotations.MotechListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -33,7 +34,14 @@ public class ConfigurationEventHandler {
     @Autowired
     private CommcareTasksNotifier commcareTasksNotifier;
 
+    /**
+     * Responsible for handling {@code CONFIG_CREATED} event. This event is fired when user creates a new configuration.
+     * Handling this event will result in adding new configuration and downloading applications related with it.
+     *
+     * @param event  the event to be handled
+     */
     @MotechListener(subjects = CONFIG_CREATED)
+    @Transactional
     public synchronized void configCreated(MotechEvent event) {
 
         String configName = (String) event.getParameters().get(EventDataKeys.CONFIG_NAME);
@@ -48,7 +56,15 @@ public class ConfigurationEventHandler {
         commcareTasksNotifier.updateTasksInfo();
     }
 
+    /**
+     * Responsible for handling {@code CONFIG_UPDATED} event. This event is fired when user updates an existing
+     * configuration. Handling this event will result in deleting all stored applications related with the updated
+     * configuration and downloading new ones from the CommCare server.
+     *
+     * @param event  the event to be handled
+     */
     @MotechListener(subjects = CONFIG_UPDATED)
+    @Transactional
     public synchronized void configUpdated(MotechEvent event) {
 
         String configName = (String) event.getParameters().get(EventDataKeys.CONFIG_NAME);
@@ -65,7 +81,15 @@ public class ConfigurationEventHandler {
         commcareTasksNotifier.updateTasksInfo();
     }
 
+    /**
+     * Responsible for handling {@code CONFIG_DELETED} event. This event is fired when user deletes an existing
+     * configuration. Handling this event will result in removing the configuration itself and all related application
+     * stored in the database.
+     *
+     * @param event  the event to be handled
+     */
     @MotechListener(subjects = CONFIG_DELETED)
+    @Transactional
     public synchronized void configDeleted(MotechEvent event) {
 
         String configName = (String) event.getParameters().get(EventDataKeys.CONFIG_NAME);

@@ -3,11 +3,14 @@ package org.motechproject.messagecampaign.domain.campaign;
 import org.joda.time.LocalDate;
 import org.motechproject.commons.date.model.Time;
 import org.motechproject.messagecampaign.domain.message.CampaignMessage;
-import org.motechproject.messagecampaign.domain.message.CampaignMessageRecord;
 import org.motechproject.messagecampaign.exception.CampaignMessageValidationException;
-
 import java.util.List;
 
+/**
+ * A type of a {@link Campaign}, in which all messages have got predefined
+ * delivery dates.
+ *
+ */
 public class AbsoluteCampaign extends Campaign {
 
     private LocalDate date;

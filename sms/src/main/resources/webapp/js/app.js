@@ -3,12 +3,41 @@
 
     /* App Module */
 
-    angular.module('sms', ['motech-dashboard', 'sms.controllers', 'sms.directives', 'ngCookies', 'ui.bootstrap', 'ngSanitize']).config(
-    ['$routeProvider',
-        function ($routeProvider) {
-            $routeProvider.
-                when('/sms/send', {templateUrl: '../sms/resources/partials/send.html', controller: 'SmsSendCtrl'}).
-                when('/sms/log', {templateUrl: '../sms/resources/partials/log.html', controller: 'SmsLogCtrl'}).
-                when('/sms/settings', {templateUrl: '../sms/resources/partials/settings.html', controller: 'SmsSettingsCtrl'});
-    }]);
+    var smsModule = angular.module('sms', ['motech-dashboard', 'sms.controllers', 'ngCookies', 'ui.bootstrap', 'ngSanitize', 'mds']), id;
+
+    $.ajax({
+        url: '../mds/entities/getEntity/SMS Module/SmsRecord',
+        success:  function(data) {
+            id = data.id;
+        },
+        async: false
+    });
+
+    $.ajax({
+        url: '../sms/available/smsTabs',
+        success:  function(data) {
+            smsModule.constant('AVAILABLE_TABS', data);
+        },
+        async:    false
+    });
+
+    smsModule.run(function ($rootScope, AVAILABLE_TABS) {
+        $rootScope.AVAILABLE_TABS = AVAILABLE_TABS;
+    });
+
+    smsModule.config(function ($routeProvider, AVAILABLE_TABS) {
+        angular.forEach(AVAILABLE_TABS, function (tab) {
+            if (tab === "log") {
+                $routeProvider.when('/sms/{0}'.format(tab), {redirectTo: 'mds/dataBrowser/'+id+'/sms'});
+            } else {
+                $routeProvider.when(
+                    '/sms/{0}'.format(tab),
+                        {
+                            templateUrl: '../sms/resources/partials/{0}.html'.format(tab),
+                            controller: 'Sms{0}Ctrl'.format(tab.capitalize())
+                        }
+                );
+            }
+        });
+    });
 }());

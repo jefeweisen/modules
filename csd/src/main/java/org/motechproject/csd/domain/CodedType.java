@@ -1,8 +1,11 @@
 package org.motechproject.csd.domain;
 
+import org.motechproject.csd.constants.CSDConstants;
+import org.motechproject.mds.annotations.Access;
 import org.motechproject.mds.annotations.Entity;
 import org.motechproject.mds.annotations.Field;
 import org.motechproject.mds.annotations.UIDisplayable;
+import org.motechproject.mds.util.SecurityMode;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -33,21 +36,22 @@ import javax.xml.bind.annotation.XmlValue;
 @Entity
 @XmlType
 @XmlAccessorType(XmlAccessType.NONE)
+@Access(value = SecurityMode.PERMISSIONS, members = {CSDConstants.MANAGE_CSD})
 public class CodedType extends AbstractID {
 
     /* The value of Coded Type eg <CodedType>MyValue</CodeType> */
     @UIDisplayable(position = 0)
-    @Field
+    @Field(tooltip = "The human readable value for that code (i.e. \"Community Health Worker\").")
     private String value = "";
 
     /* Attribute @code */
     @UIDisplayable(position = 1)
-    @Field(required = true)
+    @Field(required = true, tooltip = "The code provided by the coding organization (i.e. \"3253\").")
     private String code;
 
     /* Attribute @codingScheme*/
     @UIDisplayable(position = 2)
-    @Field(required = true)
+    @Field(required = true, tooltip = "The coding scheme used to identify this code (i.e. \"ISCO-08\").")
     private String codingScheme;
 
     public CodedType() {

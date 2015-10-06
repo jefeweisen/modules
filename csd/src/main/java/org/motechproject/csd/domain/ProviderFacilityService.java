@@ -1,10 +1,13 @@
 package org.motechproject.csd.domain;
 
+import org.motechproject.csd.constants.CSDConstants;
+import org.motechproject.mds.annotations.Access;
 import org.motechproject.mds.annotations.Cascade;
 import org.motechproject.mds.annotations.Entity;
 import org.motechproject.mds.annotations.Field;
 import org.motechproject.mds.annotations.Ignore;
 import org.motechproject.mds.annotations.UIDisplayable;
+import org.motechproject.mds.util.SecurityMode;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -41,35 +44,38 @@ import java.util.Set;
 @Entity
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType(propOrder = { "names", "organization", "languages", "operatingHours", "freeBusyURI", "extensions" })
+@Access(value = SecurityMode.PERMISSIONS, members = {CSDConstants.MANAGE_CSD})
 public class ProviderFacilityService extends AbstractUniqueID {
 
     @UIDisplayable(position = 0)
-    @Field(name = "provider_facility_service_names")
+    @Field(name = "provider_facility_service_names", tooltip = "The name of the provider who offers this facility service.")
     @Cascade(delete = true)
     private Set<Name> names = new HashSet<>();
 
     @UIDisplayable(position = 2)
-    @Field
+    @Field(tooltip = "The organization with which this provider has a relationship to offer this service.")
     private String providerOrganization;
 
     @Ignore
     private UniqueID organization;
 
     @UIDisplayable(position = 3)
-    @Field(name = "provider_facility_service_languages")
+    @Field(name = "provider_facility_service_languages", tooltip = "The provider’s supported language(s) for this facility service.")
     @Cascade(delete = true)
     private Set<CodedType> languages = new HashSet<>();
 
     @UIDisplayable(position = 1)
-    @Field(name = "provider_facility_service_operating_hours")
+    @Field(name = "provider_facility_service_operating_hours", tooltip = "The operating hours when this provider offers " +
+            "this service at this facility.")
     @Cascade(delete = true)
     private Set<OperatingHours> operatingHours = new HashSet<>();
 
     @UIDisplayable(position = 4)
-    @Field
+    @Field(tooltip = "This data lists the “busy” time for a Provider offering this service at this facility. " +
+            "This is a dynamic field that is calculated based on the operating hours of this facility service.")
     private String freeBusyURI;
 
-    @Field(name = "provider_facility_service_extensions")
+    @Field(name = "provider_facility_service_extensions", tooltip = "This is a locally defined extension for this entity.")
     @Cascade(delete = true)
     private Set<Extension> extensions = new HashSet<>();
 

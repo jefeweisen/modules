@@ -15,6 +15,9 @@ import org.junit.runner.RunWith;
 import org.motechproject.commcare.config.Config;
 import org.motechproject.commcare.domain.CommcareApplicationJson;
 import org.motechproject.commcare.domain.CommcareModuleJson;
+import org.motechproject.commcare.events.constants.DisplayNames;
+import org.motechproject.commcare.events.constants.EventDataKeys;
+import org.motechproject.commcare.events.constants.EventSubjects;
 import org.motechproject.commcare.service.CommcareApplicationDataService;
 import org.motechproject.commcare.tasks.CommcareTasksNotifier;
 import org.motechproject.commcare.tasks.action.CommcareValidatingChannel;
@@ -27,8 +30,11 @@ import org.motechproject.tasks.contract.ActionParameterRequest;
 import org.motechproject.tasks.contract.ActionParameterRequestBuilder;
 import org.motechproject.tasks.domain.ActionEvent;
 import org.motechproject.tasks.domain.ActionEventBuilder;
+import org.motechproject.tasks.domain.ActionParameter;
+import org.motechproject.tasks.domain.ActionParameterBuilder;
 import org.motechproject.tasks.domain.Channel;
 import org.motechproject.tasks.domain.EventParameter;
+import org.motechproject.tasks.domain.ParameterType;
 import org.motechproject.tasks.domain.Task;
 import org.motechproject.tasks.domain.TaskActionInformation;
 import org.motechproject.tasks.domain.TaskTriggerInformation;
@@ -44,9 +50,11 @@ import org.ops4j.pax.exam.spi.reactors.PerSuite;
 import org.osgi.framework.BundleContext;
 
 import javax.inject.Inject;
+import javax.xml.bind.DatatypeConverter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -84,10 +92,28 @@ public class CommcareTasksIntegrationBundleIT extends AbstractTaskBundleIT {
 
     private Config config;
 
+    @Override
+    protected Collection<String> getAdditionalTestDependencies() {
+        return Arrays.asList(
+                "org.motechproject:motech-tasks-test-utils",
+                "org.motechproject:motech-tasks",
+                "commons-beanutils:commons-beanutils",
+                "commons-fileupload:commons-fileupload",
+                "org.motechproject:motech-platform-web-security",
+                "org.motechproject:motech-platform-server-bundle",
+                "org.openid4java:com.springsource.org.openid4java",
+                "net.sourceforge.nekohtml:com.springsource.org.cyberneko.html",
+                "org.springframework.security:spring-security-openid"
+        );
+    }
+
     @Before
     public void setUp() throws IOException, InterruptedException {
         clearDB();
+        createAdminUser();
+        login();
         commcareTasksNotifier = (CommcareTasksNotifier) ServiceRetriever.getWebAppContext(bundleContext, COMMCARE_CHANNEL_NAME).getBean("commcareTasksNotifier");
+        setUpSecurityContext("motech", "motech", "manageTasks", "manageCommcare");
     }
 
     @After
@@ -97,6 +123,7 @@ public class CommcareTasksIntegrationBundleIT extends AbstractTaskBundleIT {
 
     @Test
     public void testCommcareTasksIntegration() throws InterruptedException, IOException {
+
         config = ConfigsUtils.prepareConfigOne();
         createConfiguration(config);
 
@@ -164,12 +191,13 @@ public class CommcareTasksIntegrationBundleIT extends AbstractTaskBundleIT {
         List<TriggerEvent> triggerEvents = channel.getTriggerTaskEvents();
         List<ActionEvent> actionEvents = channel.getActionTaskEvents();
 
-        assertTrue(actionEvents.isEmpty());
-        assertEquals(7, triggerEvents.size());
+        assertEquals(1, actionEvents.size());
+        assertEquals(8, triggerEvents.size());
 
         TaskTriggerInformation expectedForm1 = new TaskTriggerInformation();
         TaskTriggerInformation expectedForm2 = new TaskTriggerInformation();
         TaskTriggerInformation expectedCaseBirth = new TaskTriggerInformation();
+        TaskTriggerInformation expectedStockTx = new TaskTriggerInformation();
 
         expectedForm1.setSubject("org.motechproject.commcare.api.forms." + config.getName() + ".form1");
         assertTrue(channel.containsTrigger(expectedForm1));
@@ -179,6 +207,9 @@ public class CommcareTasksIntegrationBundleIT extends AbstractTaskBundleIT {
 
         expectedCaseBirth.setSubject("org.motechproject.commcare.api.case." + config.getName() + ".birth");
         assertTrue(channel.containsTrigger(expectedCaseBirth));
+
+        expectedStockTx.setSubject(EventSubjects.RECEIVED_STOCK_TRANSACTION + '.' + config.getName());
+        assertTrue(channel.containsTrigger(expectedStockTx));
 
         TriggerEvent form1Trigger = channel.getTrigger(expectedForm1);
         assertEquals("org.motechproject.commcare.api.forms", form1Trigger.getTriggerListenerSubject());
@@ -194,6 +225,15 @@ public class CommcareTasksIntegrationBundleIT extends AbstractTaskBundleIT {
         assertEquals("org.motechproject.commcare.api.case", caseTrigger.getTriggerListenerSubject());
         assertTriggerParameters(caseTrigger.getEventParameters(),
                 Arrays.asList("motherName", "childName", "dob", "caseName"));
+
+        ActionEvent expectedActionEvent = prepareAction();
+        TaskActionInformation expectedAction = new TaskActionInformation();
+        expectedAction.setSubject(expectedActionEvent.getSubject());
+
+        assertTrue(channel.containsAction(expectedAction));
+
+        ActionEvent actionEvent = channel.getAction(expectedAction);
+        assertEquals(expectedActionEvent, actionEvent);
     }
 
     private void assertTriggerParameters(List<EventParameter> eventParameters, List<String> expected) {
@@ -230,6 +270,7 @@ public class CommcareTasksIntegrationBundleIT extends AbstractTaskBundleIT {
     private HttpResponse createConfiguration(Config config) throws IOException, InterruptedException {
         HttpPost httpPost = new HttpPost(String.format("http://localhost:%d/commcare/configs", PORT));
         httpPost.addHeader("content-type", "application/json");
+        httpPost.addHeader("Authorization", "Basic " + DatatypeConverter.printBase64Binary("motech:motech".getBytes("UTF-8")).trim());
 
         Gson gson = new Gson();
 
@@ -239,11 +280,68 @@ public class CommcareTasksIntegrationBundleIT extends AbstractTaskBundleIT {
     }
 
     private void waitForTaskExecution() throws InterruptedException {
+        getLogger().info("testCommcareTasksIntegration starts waiting for task to execute");
         int retries = 0;
         while (retries < MAX_RETRIES_BEFORE_FAIL && !validatingChannel.hasExecuted()) {
             retries++;
             Thread.sleep(WAIT_TIME);
         }
+        getLogger().info("Task executed after " + retries + " retries, what took about "
+                + (retries * WAIT_TIME) / 1000 + " seconds");
+    }
+
+    private ActionEvent prepareAction() {
+        SortedSet<ActionParameter> parameters = new TreeSet<>();
+        ActionParameterBuilder builder;
+        int order = 0;
+
+        builder = new ActionParameterBuilder()
+                .setDisplayName(DisplayNames.CASE_ID)
+                .setKey(EventDataKeys.CASE_ID)
+                .setType(ParameterType.UNICODE)
+                .setRequired(true)
+                .setOrder(order++);
+        parameters.add(builder.createActionParameter());
+
+        builder = new ActionParameterBuilder()
+                .setDisplayName(DisplayNames.SECTION_ID)
+                .setKey(EventDataKeys.SECTION_ID)
+                .setType(ParameterType.UNICODE)
+                .setRequired(true)
+                .setOrder(order++);
+        parameters.add(builder.createActionParameter());
+
+        builder = new ActionParameterBuilder()
+                .setDisplayName(DisplayNames.START_DATE)
+                .setKey(EventDataKeys.START_DATE)
+                .setType(ParameterType.DATE)
+                .setRequired(false)
+                .setOrder(order++);
+        parameters.add(builder.createActionParameter());
+
+        builder = new ActionParameterBuilder()
+                .setDisplayName(DisplayNames.END_DATE)
+                .setKey(EventDataKeys.END_DATE)
+                .setType(ParameterType.DATE)
+                .setRequired(false)
+                .setOrder(order++);
+        parameters.add(builder.createActionParameter());
+
+        builder = new ActionParameterBuilder()
+                .setDisplayName(DisplayNames.EXTRA_DATA)
+                .setKey(EventDataKeys.EXTRA_DATA)
+                .setType(ParameterType.MAP)
+                .setRequired(false)
+                .setOrder(order);
+        parameters.add(builder.createActionParameter());
+
+        String displayName = String.format("Query Stock Ledger [%s]", config.getName());
+
+        ActionEventBuilder actionBuilder = new ActionEventBuilder()
+                .setDisplayName(displayName)
+                .setSubject(EventSubjects.QUERY_STOCK_LEDGER + "." + config.getName())
+                .setActionParameters(parameters);
+        return actionBuilder.createActionEvent();
     }
 
     private void clearDB() {

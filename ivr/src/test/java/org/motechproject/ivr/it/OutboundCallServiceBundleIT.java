@@ -20,6 +20,7 @@ import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerSuite;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -54,7 +55,7 @@ public class OutboundCallServiceBundleIT extends BasePaxIT {
     }
 
     @After
-    public void restoreConfigs() {
+    public void restoreConfigs() throws IOException {
         getLogger().info("restoreConfigs");
         configService.updateConfigs(backupConfigs);
     }
@@ -67,14 +68,14 @@ public class OutboundCallServiceBundleIT extends BasePaxIT {
     }
 
     @Test
-    public void verifyServiceFunctional() {
+    public void verifyServiceFunctional() throws IOException {
         getLogger().info("verifyServiceFunctional()");
 
         String httpServerURI = SimpleHttpServer.getInstance().start("foo", HttpStatus.SC_OK, "OK");
         getLogger().debug("verifyServiceFunctional - We have a server listening at {}", httpServerURI);
 
         //Create a config
-        Config config = new Config("conf123", false, null, null, null, null, null, HttpMethod.GET, httpServerURI, false, null);
+        Config config = new Config("conf123", false, null, null, null, null, null, null, HttpMethod.GET, false, httpServerURI, false, null);
         configService.updateConfigs(Arrays.asList(config));
 
         Map<String, String> params = new HashMap<>();
@@ -86,14 +87,14 @@ public class OutboundCallServiceBundleIT extends BasePaxIT {
     }
 
     @Test
-    public void shouldHandleInvalidServerResponse() {
+    public void shouldHandleInvalidServerResponse() throws IOException {
         getLogger().info("shouldHandleInvalidServerResponse()");
 
         String httpServerURI = SimpleHttpServer.getInstance().start("bar", HttpStatus.SC_BAD_REQUEST, "Eeek!");
         getLogger().debug("shouldHandleInvalidServerResponse - We have a server listening at {}", httpServerURI);
 
         //Create a config
-        Config config = new Config("conf456", false, null, null, null, null, null, HttpMethod.GET, httpServerURI,false, null);
+        Config config = new Config("conf456", false, null, null, null, null, null, null, HttpMethod.GET, false, httpServerURI,false, null);
         getLogger().debug("shouldHandleInvalidServerResponse - We create a config  {}", config.toString());
         configService.updateConfigs(Arrays.asList(config));
 
@@ -112,5 +113,30 @@ public class OutboundCallServiceBundleIT extends BasePaxIT {
         List<CallDetailRecord> callDetailRecords = callDetailRecordDataService.retrieveAll();
         assertEquals(1, callDetailRecords.size());
         assertEquals(CallDetailRecord.CALL_FAILED, callDetailRecords.get(0).getCallStatus());
+    }
+
+    @Test
+    public void shouldExecuteJsonRequest() throws IOException {
+        getLogger().info("shouldExecuteJsonRequest()");
+
+        String httpServerURI = SimpleHttpServer.getInstance().start("foo", HttpStatus.SC_OK, "OK");
+        getLogger().debug("shouldExecuteJsonRequest - We have a server listening at {}", httpServerURI);
+
+        //Create a config
+        Config config = new Config("conf789", false, null, null, null, null, null, null, HttpMethod.POST, true, httpServerURI, false, null);
+        configService.updateConfigs(Arrays.asList(config));
+
+        Map<String, String> params = new HashMap<>();
+        params.put("api_key", "qwerty123");
+        params.put("message_id", "123123");
+        params.put("channel", "ivr");
+        params.put("status_callback_url", "http://someUrl.com");
+        params.put("subscribers", "[{\"phone\":\"48700123123\",\"language\":null}]");
+
+        outboundCallService.initiateCall(config.getName(), params);
+
+        List<CallDetailRecord> callDetailRecords = callDetailRecordDataService.retrieveAll();
+        assertEquals(1, callDetailRecords.size());
+        assertEquals("conf789", callDetailRecords.get(0).getConfigName());
     }
 }

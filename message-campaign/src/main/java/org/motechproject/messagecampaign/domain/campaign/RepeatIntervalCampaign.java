@@ -2,11 +2,15 @@ package org.motechproject.messagecampaign.domain.campaign;
 
 import org.joda.time.Period;
 import org.motechproject.messagecampaign.domain.message.CampaignMessage;
-import org.motechproject.messagecampaign.domain.message.CampaignMessageRecord;
 import org.motechproject.messagecampaign.exception.CampaignMessageValidationException;
 
 import java.util.List;
 
+/**
+ * A type of a {@link Campaign}, in which all messages are repeated
+ * periodically every specified amount of time.
+ *
+ */
 public class RepeatIntervalCampaign extends Campaign {
 
     private Period repeatInterval;
@@ -28,8 +32,13 @@ public class RepeatIntervalCampaign extends Campaign {
         return new CampaignMessage(messageRecord);
     }
 
+    // TODO: deprecate in favor of getRepeatIntervalInSeconds?
     public long getRepeatIntervalInMillis(CampaignMessage cm) {
         return this.repeatInterval.getMillis();
+    }
+
+    public int getRepeatIntervalInSeconds(CampaignMessage cm) {
+        return this.repeatInterval.getMillis()/1000;
     }
 
     @Override

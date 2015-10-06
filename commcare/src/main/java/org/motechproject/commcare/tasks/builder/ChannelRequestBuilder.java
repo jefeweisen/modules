@@ -17,12 +17,22 @@ import java.util.List;
  * we use classes implementing {@link TriggerBuilder}.
  */
 public class ChannelRequestBuilder {
+
     private static final String DISPLAY_NAME = "commcare";
 
     private BundleContext bundleContext;
     private CommcareConfigService configService;
     private CommcareSchemaService schemaService;
 
+    /**
+     * Creates an instance of the {@link ChannelRequestBuilder} class, which is used for building {@link ChannelRequest}
+     * instances. The given {@code configService}, {@code schemaService}, {@code bundleContext} will be use for
+     * building new instances.
+     *
+     * @param configService  the configuration service
+     * @param schemaService  the schema service
+     * @param bundleContext  the bundle context
+     */
     public ChannelRequestBuilder(CommcareConfigService configService, CommcareSchemaService schemaService,
                                  BundleContext bundleContext) {
         this.schemaService = schemaService;
@@ -30,16 +40,25 @@ public class ChannelRequestBuilder {
         this.bundleContext = bundleContext;
     }
 
+    /**
+     * Builds an object of the {@link ChannelRequest} class.
+     *
+     * @return the created instance
+     */
     public ChannelRequest buildChannelRequest() {
         FormTriggerBuilder formTriggerBuilder = new FormTriggerBuilder(schemaService, configService);
         CaseTriggerBuilder caseTriggerBuilder = new CaseTriggerBuilder(schemaService, configService);
         CommonTriggerBuilder commonTriggerBuilder = new CommonTriggerBuilder(configService);
+        QueryStockLedgerActionBuilder queryStockLedgerActionBuilder = new QueryStockLedgerActionBuilder(configService);
 
         List<TriggerEventRequest> triggers = formTriggerBuilder.buildTriggers();
         triggers.addAll(caseTriggerBuilder.buildTriggers());
         triggers.addAll(commonTriggerBuilder.buildTriggers());
 
+        List<ActionEventRequest> actions = new ArrayList<>();
+        actions.addAll(queryStockLedgerActionBuilder.buildActions());
+
         return new ChannelRequest(DISPLAY_NAME, bundleContext.getBundle().getSymbolicName(),
-                bundleContext.getBundle().getVersion().toString(), null, triggers, new ArrayList<ActionEventRequest>());
+                bundleContext.getBundle().getVersion().toString(), null, triggers, actions);
     }
 }

@@ -1,13 +1,12 @@
 package org.motechproject.commcare.request.json;
 
-import org.apache.commons.lang.StringUtils;
-
 import java.util.ArrayList;
 import java.util.List;
 
-public class CaseRequest {
-
-    private static final int DEFAULT_LIMIT = 20;
+/**
+ * Stores all possible query parameters that might be used while fetching cases from the CommCareHQ server.
+ */
+public class CaseRequest extends Request {
 
     private String userId;
     private String caseId;
@@ -15,51 +14,12 @@ public class CaseRequest {
     private String caseName;
     private String dateModifiedStart;
     private String dateModifiedEnd;
-    private int limit;
-    private int offset;
 
-    public void setUserId(String userId) {
-        this.userId = userId;
-    }
-
-    public void setCaseId(String caseId) {
-        this.caseId = caseId;
-    }
-
-    public void setType(String type) {
-        this.type = type;
-    }
-
-    public void setCaseName(String caseName) {
-        this.caseName = caseName;
-    }
-
-    public void setDateModifiedStart(String dateModifiedStart) {
-        this.dateModifiedStart = dateModifiedStart;
-    }
-
-    public void setDateModifiedEnd(String dateModifiedEnd) {
-        this.dateModifiedEnd = dateModifiedEnd;
-    }
-
-    public void setLimit(int limit) {
-        this.limit = limit;
-    }
-
-    public int getLimit() {
-        return limit;
-    }
-
-    public void setOffset(int offset) {
-        this.offset = offset;
-    }
-
-    public int getOffset() {
-        return offset;
-    }
-
+    @Override
     public String toQueryString() {
+
         List<String> queryParams = new ArrayList<>();
+
         if (userId != null) {
             queryParams.add(concat("user_id", userId));
         }
@@ -78,32 +38,61 @@ public class CaseRequest {
         if (dateModifiedEnd != null) {
             queryParams.add(concat("date_modified_end", dateModifiedEnd));
         }
-        queryParams.add(concat("limit", limit < 1 ? DEFAULT_LIMIT : limit));
-        queryParams.add(concat("offset", offset < 0 ? 0 : offset));
 
-        return StringUtils.join(queryParams, "&");
+        return toQueryString(queryParams);
     }
 
-    private String concat(String key, Object value) {
-        return String.format("%s=%s", key, value.toString());
+    /**
+     * Sets the ID of the user to {@code userId}.
+     *
+     * @param userId  the ID of the user
+     */
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (o == null || getClass() != o.getClass()) {
-            return false;
-        }
-
-        CaseRequest that = (CaseRequest) o;
-
-        return toQueryString().equals(that.toQueryString());
+    /**
+     * Sets the ID of the case to {@code caseId}.
+     *
+     * @param caseId  the ID of the case
+     */
+    public void setCaseId(String caseId) {
+        this.caseId = caseId;
     }
 
-    @Override
-    public int hashCode() {
-        return toQueryString().hashCode();
+    /**
+     * Sets the type of the case to {@code type}.
+     *
+     * @param type  the type of the case
+     */
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    /**
+     * Sets the name of the case to {@code caseName}.
+     *
+     * @param caseName  the name of the case
+     */
+    public void setCaseName(String caseName) {
+        this.caseName = caseName;
+    }
+
+    /**
+     * Sets the beginning of the allowed modification period.
+     *
+     * @param dateModifiedStart  the start date of the allowed modification period
+     */
+    public void setDateModifiedStart(String dateModifiedStart) {
+        this.dateModifiedStart = dateModifiedStart;
+    }
+
+    /**
+     * Sets the finish of the allowed modification period.
+     *
+     * @param dateModifiedEnd  the end date of the allowed modification period
+     */
+    public void setDateModifiedEnd(String dateModifiedEnd) {
+        this.dateModifiedEnd = dateModifiedEnd;
     }
 }

@@ -43,14 +43,8 @@ import java.util.UUID;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.motechproject.security.constants.PermissionNames.ACTIVATE_USER_PERMISSION;
-import static org.motechproject.security.constants.PermissionNames.ADD_USER_PERMISSION;
-import static org.motechproject.security.constants.PermissionNames.DELETE_USER_PERMISSION;
-import static org.motechproject.security.constants.PermissionNames.EDIT_USER_PERMISSION;
+import static org.motechproject.security.constants.PermissionNames.MANAGE_ROLE_AND_PERMISSION_PERMISSION;
 import static org.motechproject.security.constants.PermissionNames.MANAGE_USER_PERMISSION;
-import static org.motechproject.security.constants.PermissionNames.UPDATE_SECURITY_PERMISSION;
-import static org.motechproject.security.constants.PermissionNames.VIEW_SECURITY;
-import static org.motechproject.security.constants.PermissionNames.VIEW_USER_PERMISSION;
 
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerSuite.class)
@@ -183,10 +177,7 @@ public class MessageCampaignBundleIT extends BasePaxIT {
     }
 
     private List<SimpleGrantedAuthority> getPermissions() {
-        return asList(new SimpleGrantedAuthority(ADD_USER_PERMISSION), new SimpleGrantedAuthority(EDIT_USER_PERMISSION),
-                new SimpleGrantedAuthority(MANAGE_USER_PERMISSION), new SimpleGrantedAuthority(EDIT_USER_PERMISSION),
-                new SimpleGrantedAuthority(ACTIVATE_USER_PERMISSION), new SimpleGrantedAuthority(VIEW_USER_PERMISSION),
-                new SimpleGrantedAuthority(DELETE_USER_PERMISSION), new SimpleGrantedAuthority(UPDATE_SECURITY_PERMISSION),
-                new SimpleGrantedAuthority(VIEW_SECURITY));
+        return asList(new SimpleGrantedAuthority(MANAGE_ROLE_AND_PERMISSION_PERMISSION),
+                new SimpleGrantedAuthority(MANAGE_USER_PERMISSION));
     }
 }

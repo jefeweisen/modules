@@ -3,15 +3,18 @@ package org.motechproject.messagecampaign.domain.campaign;
 import org.apache.commons.lang.StringUtils;
 import org.joda.time.Period;
 import org.motechproject.messagecampaign.domain.message.CampaignMessage;
-import org.motechproject.messagecampaign.domain.message.CampaignMessageRecord;
 import org.motechproject.messagecampaign.exception.CampaignMessageValidationException;
 
 import java.util.List;
 
+/**
+ * A type of a {@link Campaign}, in which all messages define deliver dates
+ * based on a CRON expression.
+ */
 public class CronBasedCampaign extends Campaign {
 
     private String cron;
-
+    
     public CronBasedCampaign() {
 
     }

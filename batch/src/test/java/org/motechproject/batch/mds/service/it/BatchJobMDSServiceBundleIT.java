@@ -13,9 +13,13 @@ import org.ops4j.pax.exam.ExamFactory;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerSuite;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 
 import javax.inject.Inject;
-import java.util.List;
+
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerSuite.class)
@@ -28,11 +32,10 @@ public class BatchJobMDSServiceBundleIT extends BasePaxIT {
     @Test
     public void testBatchJob() {
         final String jobName = "randomJob";
-        List<BatchJob> batchJobs = batchJobMDSService.findByJobName(jobName);
-        Assert.assertNotNull(batchJobs);
-        Assert.assertEquals(0, batchJobs.size());
+        BatchJob batchJob = batchJobMDSService.findByJobName(jobName);
+        assertNull(batchJob);
 
-        BatchJob batchJob = new BatchJob();
+        batchJob = new BatchJob();
         batchJob.setJobName(jobName);
         batchJob.setCronExpression("0 15 10 * * ? 2020");
         batchJob.setBatchJobStatusId(1);
@@ -40,23 +43,26 @@ public class BatchJobMDSServiceBundleIT extends BasePaxIT {
         batchJob.setJobContent(jobContent);
         batchJobMDSService.create(batchJob);
 
-        batchJobs = batchJobMDSService.findByJobName(jobName);
-        Assert.assertNotNull(batchJobs);
-        Assert.assertEquals(1, batchJobs.size());
+        batchJobMDSService.doInTransaction(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus status) {
+                BatchJob batchJobFromDatabase = batchJobMDSService.findByJobName(jobName);
+                assertNotNull(batchJobFromDatabase);
 
-        batchJob = batchJobs.get(0);
-        String cron = batchJob.getCronExpression();
-        Assert.assertEquals("0 15 10 * * ? 2020", cron);
-        jobContent = (Byte[]) batchJobMDSService.getDetachedField(batchJob,
-                "jobContent");
-        Assert.assertEquals("job content",
-                new String(ArrayUtils.toPrimitive(jobContent)));
+                String cron = batchJobFromDatabase.getCronExpression();
+                Assert.assertEquals("0 15 10 * * ? 2020", cron);
+
+                Byte[] jobContentFromDatabase = (Byte[]) batchJobMDSService.getDetachedField(batchJobFromDatabase,
+                        "jobContent");
+                Assert.assertEquals("job content",
+                        new String(ArrayUtils.toPrimitive(jobContentFromDatabase)));
+            }
+        });
 
         batchJobMDSService.delete(batchJob);
 
-        batchJobs = batchJobMDSService.findByJobName(jobName);
-        Assert.assertNotNull(batchJobs);
-        Assert.assertEquals(0, batchJobs.size());
+        batchJob = batchJobMDSService.findByJobName(jobName);
+        assertNull(batchJob);
     }
 
     @After

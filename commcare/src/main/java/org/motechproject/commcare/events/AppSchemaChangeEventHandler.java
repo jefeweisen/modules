@@ -13,6 +13,7 @@ import org.motechproject.mds.filter.Filter;
 import org.motechproject.mds.filter.Filters;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -39,7 +40,16 @@ public class AppSchemaChangeEventHandler {
     @Autowired
     private CommcareConfigService configService;
 
+    /**
+     * Responsible for handling {@code SCHEMA_CHANGE_EVENT}. This event is fired when the CommCare server sends a
+     * notification about schema change to the MOTECH forwarding endpoint. All stored applications that originate from
+     * the configuration passed in the event will be deleted and new applications will be downloaded from the CommCare
+     * server.
+     *
+     * @param event  the schema change event to be handled
+     */
     @MotechListener(subjects = SCHEMA_CHANGE_EVENT)
+    @Transactional
     public synchronized void schemaChange(MotechEvent event) {
 
         Config config = configService.getByName((String) event.getParameters().get(EventDataKeys.CONFIG_NAME));

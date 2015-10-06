@@ -3,12 +3,12 @@ package org.motechproject.messagecampaign.web.api;
 import org.motechproject.messagecampaign.domain.campaign.CampaignRecord;
 import org.motechproject.messagecampaign.exception.CampaignNotFoundException;
 import org.motechproject.messagecampaign.service.MessageCampaignService;
+import org.motechproject.messagecampaign.web.MessageCampaignController;
 import org.motechproject.messagecampaign.web.model.CampaignDto;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -19,15 +19,24 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * REST API controller for handling message campaign requests.
+ */
 @Controller
 @RequestMapping(value = "web-api")
-public class CampaignRestController {
+public class CampaignRestController extends MessageCampaignController {
 
     private static final String HAS_MANAGE_CAMPAIGNS_ROLE = "hasRole('manageCampaigns')";
 
     @Autowired
     private MessageCampaignService messageCampaignService;
 
+    /**
+     * Retrieves campaign of the given name.
+     *
+     * @param campaignName the name of the campaign
+     * @return campaign record of the given name
+     */
     @RequestMapping(value = "/campaigns/{campaignName}", method = RequestMethod.GET)
     @PreAuthorize(HAS_MANAGE_CAMPAIGNS_ROLE)
     @ResponseBody
@@ -41,6 +50,11 @@ public class CampaignRestController {
         return new CampaignDto(campaignRecord);
     }
 
+    /**
+     * Creates a new message campaign.
+     *
+     * @param campaign the campaign to create
+     */
     @RequestMapping(value = "/campaigns", method = RequestMethod.POST)
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize(HAS_MANAGE_CAMPAIGNS_ROLE)
@@ -49,6 +63,11 @@ public class CampaignRestController {
         messageCampaignService.saveCampaign(campaignRecord);
     }
 
+    /**
+     * Retrieves all message campaigns.
+     *
+     * @return all message campaigns.
+     */
     @RequestMapping(value = "/campaigns", method = RequestMethod.GET)
     @PreAuthorize(HAS_MANAGE_CAMPAIGNS_ROLE)
     @ResponseBody
@@ -63,17 +82,15 @@ public class CampaignRestController {
         return campaignDtos;
     }
 
+    /**
+     * Deletes a message campaign of the given name.
+     *
+     * @param campaignName a name of the campaign to remove
+     */
     @RequestMapping(value = "/campaigns/{campaignName}", method = RequestMethod.DELETE)
     @ResponseStatus(HttpStatus.OK)
     @PreAuthorize(HAS_MANAGE_CAMPAIGNS_ROLE)
     public void deleteCampaign(@PathVariable String campaignName) {
         messageCampaignService.deleteCampaign(campaignName);
-    }
-
-    @ExceptionHandler(CampaignNotFoundException.class)
-    @ResponseStatus(HttpStatus.NOT_FOUND)
-    @ResponseBody
-    public String handleException(Exception e) {
-        return e.getMessage();
     }
 }

@@ -35,6 +35,9 @@
     <osgi:service id="messageCampaignServiceOsgi" ref="messageCampaignService"
                   interface="org.motechproject.messagecampaign.service.MessageCampaignService"/>
 
+    <osgi:service ref="messageCampaignLifecycleListener"
+                  interface="org.motechproject.messagecampaign.handler.MessageCampaignLifecycleListener" />
+
     <osgi:reference id="schedulerServiceOsgi"
                     interface="org.motechproject.scheduler.service.MotechSchedulerService"/>
 
@@ -52,4 +55,6 @@
 
     <osgi:reference id="campaignMessageRecordServiceOsgi"
                     interface="org.motechproject.messagecampaign.dao.CampaignMessageRecordService"/>
+
+    <osgi:reference id="transactionManager" interface="org.springframework.transaction.PlatformTransactionManager" context-class-loader="unmanaged"/>
 </beans>

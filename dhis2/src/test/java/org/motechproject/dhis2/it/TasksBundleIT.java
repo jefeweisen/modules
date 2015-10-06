@@ -1,6 +1,5 @@
 package org.motechproject.dhis2.it;
 
-import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -21,19 +20,17 @@ import org.motechproject.tasks.domain.ActionEvent;
 import org.motechproject.tasks.domain.ActionParameter;
 import org.motechproject.tasks.domain.Channel;
 import org.motechproject.tasks.service.ChannelService;
-import org.motechproject.testing.osgi.BasePaxIT;
 import org.motechproject.testing.osgi.container.MotechNativeTestContainerFactory;
 import org.ops4j.pax.exam.ExamFactory;
 import org.ops4j.pax.exam.junit.PaxExam;
 import org.ops4j.pax.exam.spi.reactors.ExamReactorStrategy;
 import org.ops4j.pax.exam.spi.reactors.PerSuite;
-import org.osgi.framework.BundleContext;
-
 import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.transaction.TransactionStatus;
+import org.springframework.transaction.support.TransactionCallbackWithoutResult;
 
 import javax.inject.Inject;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.SortedSet;
@@ -44,7 +41,7 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(PaxExam.class)
 @ExamReactorStrategy(PerSuite.class)
 @ExamFactory(MotechNativeTestContainerFactory.class)
-public class TasksBundleIT extends BasePaxIT{
+public class TasksBundleIT extends BaseDhisIT {
 
     private static final String DATA_ELEMENT_NAME = "DataElementName";
     private static final String DATA_ELEMENT_ID = "DataElementID";
@@ -61,7 +58,6 @@ public class TasksBundleIT extends BasePaxIT{
     private static final String STAGE_NAME_NO_REG = "StageNameNoReg";
     private static final String STAGE_ID_NO_REG = "StageIdNoReg";
     private static final String MODULE_NAME = "org.motechproject.dhis2";
-    private static final int ACTION_EVENT_SIZE = 5;
 
 
     @Inject
@@ -82,7 +78,7 @@ public class TasksBundleIT extends BasePaxIT{
     private Logger logger = getLogger();
 
     @Before
-    public void setup() {
+    public void setUp() {
         populateDatabase();
         logger.debug("updating tasks Channel");
         tasksService.updateChannel();
@@ -92,11 +88,11 @@ public class TasksBundleIT extends BasePaxIT{
     public void testTaskActionsAreCorrect() throws Exception {
 
         logger.debug("Running taskActionsAreCorrect");
-        Channel taskchannel = channelService.getChannel(MODULE_NAME);
+        Channel taskChannel = channelService.getChannel(MODULE_NAME);
 
-        assertNotNull(taskchannel);
-        assertEquals(taskchannel.getModuleName(), MODULE_NAME);
-        List<ActionEvent> actionEvents = taskchannel.getActionTaskEvents();
+        assertNotNull(taskChannel);
+        assertEquals(taskChannel.getModuleName(), MODULE_NAME);
+        List<ActionEvent> actionEvents = taskChannel.getActionTaskEvents();
         assertNotNull(actionEvents);
 
         for (ActionEvent e : actionEvents) {
@@ -260,76 +256,81 @@ public class TasksBundleIT extends BasePaxIT{
         logger.debug("Action Parameter:" + parameter.getKey());
         parameter = actionParameterIterator.next();
         assertEquals(parameter.getKey(), ATTRIBUTE_ID);
-
-
-
-
     }
 
 
     private void populateDatabase () {
-
         /*Data Elements*/
         DataElement dataElement = new DataElement(DATA_ELEMENT_NAME,DATA_ELEMENT_ID);
         dataElementDataService.create(dataElement);
-        List<DataElement> dataElements = new ArrayList<>();
-        dataElements.add(dataElement);
 
         /*Tracked Entity Attributes*/
         TrackedEntityAttribute attribute = new TrackedEntityAttribute(ATTRIBUTE_NAME,ATTRIBUTE_ID);
         trackedEntityAttributeDataService.create(attribute);
-        List<TrackedEntityAttribute> attributeList = new ArrayList<>();
-        attributeList.add(attribute);
 
         /*Tracked Entity*/
-        TrackedEntity trackedEntity = new TrackedEntity(TRACKED_ENTITY_NAME,TRACKED_ENTITY_ID);
+        final TrackedEntity trackedEntity = new TrackedEntity(TRACKED_ENTITY_NAME,TRACKED_ENTITY_ID);
         trackedEntityDataService.create(trackedEntity);
 
         /*Stages*/
-        List<Stage> stages = new ArrayList<>();
-        Stage stage = new Stage();
-        stage.setRegistration(true);
-        stage.setUuid(STAGE_ID);
-        stage.setName(STAGE_NAME);
-        stage.setProgram(PROGRAM_REGISTRATION_ID);
-        stage.setDataElements(dataElements);
+        stageDataService.doInTransaction(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                Stage stage = new Stage();
+                stage.setRegistration(true);
+                stage.setUuid(STAGE_ID);
+                stage.setName(STAGE_NAME);
+                stage.setProgram(PROGRAM_REGISTRATION_ID);
+                stage.setDataElements(dataElementDataService.retrieveAll());
 
-        stages.add(stage);
-        stageDataService.create(stage);
+                stageDataService.create(stage);
+            }
+        });
 
-        Stage stageNoReg = new Stage();
-        stageNoReg.setRegistration(false);
-        stageNoReg.setUuid(STAGE_ID_NO_REG);
-        stageNoReg.setName(STAGE_NAME_NO_REG);
-        stageNoReg.setProgram(PROGRAM_NO_REGISTRATION_ID);
-        stageNoReg.setDataElements(dataElements);
+        stageDataService.doInTransaction(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                Stage stageNoReg = new Stage();
+                stageNoReg.setRegistration(false);
+                stageNoReg.setUuid(STAGE_ID_NO_REG);
+                stageNoReg.setName(STAGE_NAME_NO_REG);
+                stageNoReg.setProgram(PROGRAM_NO_REGISTRATION_ID);
+                stageNoReg.setDataElements(dataElementDataService.retrieveAll());
 
-        List<Stage> stagesNoReg = new ArrayList<>();
-        stagesNoReg.add(stageNoReg);
-        stageDataService.create(stageNoReg);
-
+                stageDataService.create(stageNoReg);
+            }
+        });
 
         /*Programs*/
-        Program program = new Program();
-        program.setName(PROGRAM_REGISTRATION);
-        program.setUuid(PROGRAM_REGISTRATION_ID);
-        program.setAttributes(attributeList);
-        program.setTrackedEntity(trackedEntity);
-        program.setRegistration(true);
-        program.setSingleEvent(false);
-        program.setStages(stages);
+        programDataService.doInTransaction(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                Program program = new Program();
+                program.setName(PROGRAM_REGISTRATION);
+                program.setUuid(PROGRAM_REGISTRATION_ID);
+                program.setAttributes(trackedEntityAttributeDataService.retrieveAll());
+                program.setTrackedEntity(trackedEntityDataService.findByUuid(trackedEntity.getUuid()));
+                program.setRegistration(true);
+                program.setSingleEvent(false);
+                //program.setStages(stages);
 
-        programDataService.create(program);
+                programDataService.create(program);
+            }
+        });
 
-        Program programNoRegistration = new Program();
-        programNoRegistration.setName(PROGRAM_NO_REGISTRATION);
-        programNoRegistration.setUuid(PROGRAM_NO_REGISTRATION_ID);
-        programNoRegistration.setAttributes(attributeList);
-        programNoRegistration.setRegistration(false);
-        programNoRegistration.setSingleEvent(true);
-        programNoRegistration.setStages(stagesNoReg);
+        programDataService.doInTransaction(new TransactionCallbackWithoutResult() {
+            @Override
+            protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
+                Program programNoRegistration = new Program();
+                programNoRegistration.setName(PROGRAM_NO_REGISTRATION);
+                programNoRegistration.setUuid(PROGRAM_NO_REGISTRATION_ID);
+                programNoRegistration.setAttributes(trackedEntityAttributeDataService.retrieveAll());
+                programNoRegistration.setRegistration(false);
+                programNoRegistration.setSingleEvent(true);
+                programNoRegistration.setStages(Arrays.asList(stageDataService.findByUuid(STAGE_ID_NO_REG)));
 
-        programDataService.create(programNoRegistration);
-
+                programDataService.create(programNoRegistration);
+            }
+        });
     }
 }

@@ -1,6 +1,5 @@
 package org.motechproject.csd.util;
 
-import junit.framework.Assert;
 import org.apache.commons.io.IOUtils;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,6 +9,8 @@ import org.motechproject.csd.domain.CSD;
 
 import java.io.InputStream;
 
+import static junit.framework.Assert.assertEquals;
+
 public class MarshallUtilsTest {
 
     private CSD csd;
@@ -17,20 +18,22 @@ public class MarshallUtilsTest {
 
     @Before
     public void setup() throws Exception {
-        InputStream in = getClass().getResourceAsStream("/initialXml.xml");
-        xml = IOUtils.toString(in);
-        csd = InitialData.getInitialData();
+        try (InputStream in = getClass().getResourceAsStream("/initialXml.xml")) {
+            xml = IOUtils.toString(in);
+            xml = xml.replace("\r\n", "\n"); // remove windows line feeds
+            csd = InitialData.getInitialData();
+        }
     }
 
     @Test
     public void marshallerTest() throws Exception {
         String generatedXml = MarshallUtils.marshall(csd, CSDConstants.CSD_SCHEMA, CSD.class);
-        Assert.assertEquals(xml, generatedXml);
+        assertEquals(xml, generatedXml);
     }
 
     @Test
     public void unmarshallerTest() throws Exception {
         CSD generatedCSD = (CSD) MarshallUtils.unmarshall(xml, CSDConstants.CSD_SCHEMA, CSD.class);
-        Assert.assertEquals(csd, generatedCSD);
+        assertEquals(csd, generatedCSD);
     }
 }

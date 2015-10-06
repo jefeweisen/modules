@@ -27,6 +27,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.io.IOException;
 import java.net.UnknownHostException;
@@ -36,11 +37,11 @@ import java.util.List;
 import java.util.Map;
 
 import static org.motechproject.commons.date.util.DateUtil.now;
-import static org.motechproject.sms.SmsEvents.outboundEvent;
 import static org.motechproject.sms.audit.SmsDirection.OUTBOUND;
+import static org.motechproject.sms.util.SmsEvents.outboundEvent;
 
 /**
- * This is the main meat - here we talk to the providers using HTTP
+ * This is the main meat - here we talk to the providers using HTTP.
  */
 @Service
 public class SmsHttpService {
@@ -55,17 +56,90 @@ public class SmsHttpService {
     private StatusMessageService statusMessageService;
     private SmsRecordsDataService smsRecordsDataService;
 
-    @Autowired
-    public SmsHttpService(@Qualifier("templateService") TemplateService templateService,
-                          @Qualifier("configService") ConfigService configService,
-                          EventRelay eventRelay, HttpClient httpClient, SmsRecordsDataService smsRecordsDataService,
-                          StatusMessageService statusMessageService) {
-        this.templateService = templateService;
-        this.configService = configService;
-        this.eventRelay = eventRelay;
-        this.commonsHttpClient = httpClient;
-        this.statusMessageService = statusMessageService;
-        this.smsRecordsDataService = smsRecordsDataService;
+    /**
+     * This method allows sending outgoing sms messages through HTTP. The configuration specified in the {@link OutgoingSms}
+     * object will be used for dealing with the provider.
+     * @param sms the representation of the sms to send
+     */
+    @Transactional
+    public synchronized void send(OutgoingSms sms) {
+
+        Config config = configService.getConfigOrDefault(sms.getConfig());
+        Template template = templateService.getTemplate(config.getTemplateName());
+        HttpMethod httpMethod = null;
+        Integer failureCount = sms.getFailureCount();
+        Integer httpStatus = null;
+        String httpResponse = null;
+        String errorMessage = null;
+        Map<String, String> props = generateProps(sms, template, config);
+        List<MotechEvent> events = new ArrayList<>();
+        List<SmsRecord> auditRecords = new ArrayList<>();
+
+        //
+        // Generate the HTTP request
+        //
+        try {
+            httpMethod = prepHttpMethod(template, props, config);
+            httpStatus = commonsHttpClient.executeMethod(httpMethod);
+            httpResponse = httpMethod.getResponseBodyAsString();
+        } catch (UnknownHostException e) {
+            errorMessage = String.format("Network connectivity issues or problem with '%s' template? %s",
+                    template.getName(), e.toString());
+        } catch (IllegalArgumentException | IOException | IllegalStateException e) {
+            errorMessage = String.format("Problem with '%s' template? %s", template.getName(), e.toString());
+        } finally {
+            if (httpMethod != null) {
+                httpMethod.releaseConnection();
+            }
+        }
+
+        //
+        // make sure we don't talk to the SMS provider too fast (some only allow a max of n per minute calls)
+        //
+        delayProviderAccess(template);
+
+        //
+        // Analyze provider's response
+        //
+        Response templateResponse = template.getOutgoing().getResponse();
+        if (httpStatus == null || !templateResponse.isSuccessStatus(httpStatus) || httpMethod == null) {
+            //
+            // HTTP Request Failure
+            //
+            failureCount++;
+            handleFailure(httpStatus, errorMessage, failureCount, templateResponse, httpResponse, config, sms,
+                    auditRecords, events);
+        } else {
+            //
+            // HTTP Request Success, now look more closely at what the provider is telling us
+            //
+            ResponseHandler handler = createResponseHandler(template, templateResponse, config, sms);
+
+            try {
+                handler.handle(sms, httpResponse, httpMethod.getResponseHeaders());
+            } catch (IllegalStateException | IllegalArgumentException e) {
+                // exceptions generated above should only come from config/template issues, try to display something
+                // useful in the motech messages and tomcat log
+                statusMessageService.warn(e.getMessage(), SMS_MODULE);
+                throw e;
+            }
+            events = handler.getEvents();
+            auditRecords = handler.getAuditRecords();
+        }
+
+        //
+        // Finally send all the events that need sending...
+        //
+        for (MotechEvent event : events) {
+            eventRelay.sendEventMessage(event);
+        }
+
+        //
+        // ...and audit all the records that need auditing
+        //
+        for (SmsRecord smsRecord : auditRecords) {
+            smsRecordsDataService.create(smsRecord);
+        }
     }
 
     private static String printableMethodParams(HttpMethod method) {
@@ -132,6 +206,9 @@ public class SmsHttpService {
         props.put("message", sms.getMessage());
         props.put("motechId", sms.getMotechId());
         props.put("callback", configService.getServerUrl() + "/module/sms/status/" + config.getName());
+        if (sms.getCustomParams() != null) {
+            props.putAll(sms.getCustomParams());
+        }
 
         for (ConfigProp configProp : config.getProps()) {
             props.put(configProp.getName(), configProp.getValue());
@@ -173,7 +250,7 @@ public class SmsHttpService {
                     config.retryOrAbortStatus(failureCount), null, sms.getMotechId(), null, errorMessage));
         }
         events.add(outboundEvent(config.retryOrAbortSubject(failureCount), config.getName(), sms.getRecipients(),
-                sms.getMessage(), sms.getMotechId(), null, sms.getFailureCount() + 1, null, null));
+                sms.getMessage(), sms.getMotechId(), null, sms.getFailureCount() + 1, null, null, sms.getCustomParams()));
 
     }
 
@@ -205,83 +282,35 @@ public class SmsHttpService {
         return method;
     }
 
-    public synchronized void send(OutgoingSms sms) {
+    @Autowired
+    @Qualifier("templateService")
+    public void setTemplateService(TemplateService templateService) {
+        this.templateService = templateService;
+    }
 
-        Config config = configService.getConfigOrDefault(sms.getConfig());
-        Template template = templateService.getTemplate(config.getTemplateName());
-        HttpMethod httpMethod = null;
-        Integer failureCount = sms.getFailureCount();
-        Integer httpStatus = null;
-        String httpResponse = null;
-        String errorMessage = null;
-        Map<String, String> props = generateProps(sms, template, config);
-        List<MotechEvent> events = new ArrayList<>();
-        List<SmsRecord> auditRecords = new ArrayList<>();
+    @Autowired
+    public void setEventRelay(EventRelay eventRelay) {
+        this.eventRelay = eventRelay;
+    }
 
-        //
-        // Generate the HTTP request
-        //
-        try {
-            httpMethod = prepHttpMethod(template, props, config);
-            httpStatus = commonsHttpClient.executeMethod(httpMethod);
-            httpResponse = httpMethod.getResponseBodyAsString();
-        } catch (UnknownHostException e) {
-            errorMessage = String.format("Network connectivity issues or problem with '%s' template? %s",
-                    template.getName(), e.toString());
-        } catch (IllegalArgumentException|IOException|IllegalStateException e) {
-            errorMessage = String.format("Problem with '%s' template? %s", template.getName(), e.toString());
-        } finally {
-            if (httpMethod != null) {
-                httpMethod.releaseConnection();
-            }
-        }
+    @Autowired
+    @Qualifier("configService")
+    public void setConfigService(ConfigService configService) {
+        this.configService = configService;
+    }
 
-        //
-        // make sure we don't talk to the SMS provider too fast (some only allow a max of n per minute calls)
-        //
-        delayProviderAccess(template);
+    @Autowired
+    public void setCommonsHttpClient(HttpClient commonsHttpClient) {
+        this.commonsHttpClient = commonsHttpClient;
+    }
 
-        //
-        // Analyze provider's response
-        //
-        Response templateResponse = template.getOutgoing().getResponse();
-        if (httpStatus == null || !templateResponse.isSuccessStatus(httpStatus) || httpMethod == null) {
-            //
-            // HTTP Request Failure
-            //
-            failureCount++;
-            handleFailure(httpStatus, errorMessage, failureCount, templateResponse, httpResponse, config, sms,
-                    auditRecords, events);
-        } else {
-            //
-            // HTTP Request Success, now look more closely at what the provider is telling us
-            //
-            ResponseHandler handler = createResponseHandler(template, templateResponse, config, sms);
+    @Autowired
+    public void setStatusMessageService(StatusMessageService statusMessageService) {
+        this.statusMessageService = statusMessageService;
+    }
 
-            try {
-                handler.handle(sms, httpResponse, httpMethod.getResponseHeaders());
-            } catch (IllegalStateException e) {
-                // exceptions generated above should only come from config/template issues, try to display something
-                // useful in the motech messages and tomcat log
-                statusMessageService.warn(e.getMessage(), SMS_MODULE);
-                throw e;
-            }
-            events = handler.getEvents();
-            auditRecords = handler.getAuditRecords();
-        }
-
-        //
-        // Finally send all the events that need sending...
-        //
-        for (MotechEvent event : events) {
-            eventRelay.sendEventMessage(event);
-        }
-
-        //
-        // ...and audit all the records that need auditing
-        //
-        for (SmsRecord smsRecord : auditRecords) {
-            smsRecordsDataService.create(smsRecord);
-        }
+    @Autowired
+    public void setSmsRecordsDataService(SmsRecordsDataService smsRecordsDataService) {
+        this.smsRecordsDataService = smsRecordsDataService;
     }
 }

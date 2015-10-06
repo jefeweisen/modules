@@ -1,8 +1,5 @@
 package org.motechproject.hub.web;
 
-import java.util.List;
-import java.util.UUID;
-
 import org.motechproject.http.agent.service.HttpAgent;
 import org.motechproject.http.agent.service.Method;
 import org.motechproject.hub.mds.HubSubscription;
@@ -18,6 +15,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
+import java.util.UUID;
+
 /**
  * This class implements <code>Runnable</code> which starts a new thread to
  * verify the intent of the subscriber requesting subscription or
@@ -28,8 +28,7 @@ import org.springframework.transaction.annotation.Transactional;
  */
 public class IntentVerificationThreadRunnable implements Runnable {
 
-    private static final Logger LOGGER = LoggerFactory
-            .getLogger(IntentVerificationThreadRunnable.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(IntentVerificationThreadRunnable.class);
 
     private static final String INTENT_VERIFICATION_PARAMS = "?hub.mode={mode}&hub.topic={topic}&hub.challenge={challenge}";
 
@@ -40,50 +39,115 @@ public class IntentVerificationThreadRunnable implements Runnable {
     private Integer retryCount;
     private Long retryInterval;
 
+    /**
+     * Gets the topic id.
+     *
+     * @return the topic id
+     */
     public Integer getTopicId() {
         return topicId;
     }
 
+    /**
+     * Sets the topic id.
+     *
+     * @param topicId the topic id to be set
+     */
     public void setTopicId(Integer topicId) {
         this.topicId = topicId;
     }
 
+    /**
+     * Gets the retry count.
+     *
+     * @return the retry count
+     */
     public Integer getRetryCount() {
         return retryCount;
     }
 
+    /**
+     * Sets the retry count.
+     *
+     * @param retryCount the retry count to be set
+     */
     public void setRetryCount(Integer retryCount) {
         this.retryCount = retryCount;
     }
 
+    /**
+     * Gets interval of intent verification retries.
+     *
+     * @return the retry interval
+     */
     public Long getRetryInterval() {
         return retryInterval;
     }
 
+    /**
+     * Sets interval of intent verification retries.
+     *
+     * @param retryInterval the retry interval to be set
+     */
     public void setRetryInterval(Long retryInterval) {
         this.retryInterval = retryInterval;
     }
 
+    /**
+     * Gets callback URL. Callback url is the URL at which
+     * a subscriber wishes to receive notifications about changes
+     * in subscribed topic.
+     *
+     * @return the callback url
+     */
     public String getCallbackUrl() {
         return callbackUrl;
     }
 
+    /**
+     * Sets callback URL. Callback url is the URL at which
+     * a subscriber wishes to receive notifications about changes
+     * in subscribed topic.
+     *
+     * @param callbackUrl the callback url to be set
+     */
     public void setCallbackUrl(String callbackUrl) {
         this.callbackUrl = callbackUrl;
     }
 
+    /**
+     * Gets mode of hub request as a <code>String</code>.
+     *
+     * @return the mode of hub request as a <code>String</code>
+     */
     public String getMode() {
         return mode;
     }
 
+    /**
+     * Sets mode of hub request. It takes the mode as a <code>String</code>.
+     * For valid modes look at {@link org.motechproject.hub.model.Modes}
+     *
+     * @param mode the mode of hub request to be set
+     */
     public void setMode(String mode) {
         this.mode = mode;
     }
 
+    /**
+     * Gets the topic. Its the URL of the content that is subscribed.
+     *
+     * @return the topic URL
+     */
     public String getTopic() {
         return topic;
     }
 
+    /**
+     * Sets the topic. Topic is the URL of the content to which you want subscribe.
+     *
+     * @param topic the topic URL
+     */
     public void setTopic(String topic) {
         this.topic = topic;
     }
@@ -92,6 +156,13 @@ public class IntentVerificationThreadRunnable implements Runnable {
 
     private HttpAgent httpAgentImpl;
 
+    /**
+     * Creates a new instance of <code>IntentVerificationThreadRunnable</code>, with
+     * all fields set to the values specified in the parameters.
+     *
+     * @param hubSubscriptionMDSService the MDS service for hub subscriptions
+     * @param httpAgentImpl the OSGI service for sending http requests
+     */
     public IntentVerificationThreadRunnable(
             HubSubscriptionMDSService hubSubscriptionMDSService,
             HttpAgent httpAgentImpl) {
@@ -99,10 +170,12 @@ public class IntentVerificationThreadRunnable implements Runnable {
         this.httpAgentImpl = httpAgentImpl;
     }
 
-    public HttpAgent getHttpAgentImpl() {
-        return httpAgentImpl;
-    }
-
+    /**
+     * Sets the <code>HttpAgent</code> which is an OSGI service
+     * used for sending http requests.
+     *
+     * @param httpAgentImpl the http agent to be set
+     */
     public void setHttpAgentImpl(HttpAgent httpAgentImpl) {
         this.httpAgentImpl = httpAgentImpl;
     }
@@ -125,12 +198,11 @@ public class IntentVerificationThreadRunnable implements Runnable {
     @Transactional
     public void run() {
 
-        SubscriptionStatusLookup statusLookup = null;
+        SubscriptionStatusLookup statusLookup;
 
         HttpHeaders headers = new HttpHeaders();
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
-        HttpEntity<String> entity = new HttpEntity<String>("parameters",
-                headers);
+        HttpEntity<String> entity = new HttpEntity<>("parameters", headers);
         // randomly generated UUID
         String uuid = UUID.randomUUID().toString();
         String intentVerificationUrl = callbackUrl + INTENT_VERIFICATION_PARAMS;
@@ -148,7 +220,8 @@ public class IntentVerificationThreadRunnable implements Runnable {
             } else {
                 statusLookup = SubscriptionStatusLookup.INTENT_VERIFIED;
             }
-        } catch (Exception e) {
+        } catch (RuntimeException e) {
+            LOGGER.error("An error occurred during intent verification", e);
             statusLookup = SubscriptionStatusLookup.INTENT_FAILED;
         }
 

@@ -1,9 +1,12 @@
 package org.motechproject.csd.domain;
 
+import org.motechproject.csd.constants.CSDConstants;
+import org.motechproject.mds.annotations.Access;
 import org.motechproject.mds.annotations.Cascade;
 import org.motechproject.mds.annotations.Entity;
 import org.motechproject.mds.annotations.Field;
 import org.motechproject.mds.annotations.UIDisplayable;
+import org.motechproject.mds.util.SecurityMode;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -49,15 +52,16 @@ import java.util.Set;
 @Entity
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType(propOrder = { "services", "extensions" })
+@Access(value = SecurityMode.PERMISSIONS, members = {CSDConstants.MANAGE_CSD})
 public class FacilityOrganization extends AbstractUniqueID {
 
     @UIDisplayable(position = 0)
-    @Field(name = "facility_organization_services")
+    @Field(name = "facility_organization_services", tooltip = "The services that this organization offers at this facility.")
     @Cascade(delete = true)
     private Set<FacilityOrganizationService> services = new HashSet<>();
 
     @UIDisplayable(position = 1)
-    @Field(name = "facility_organization_extensions")
+    @Field(name = "facility_organization_extensions", tooltip = "This is a locally defined extension for this entity.")
     @Cascade(delete = true)
     private Set<Extension> extensions = new HashSet<>();
 

@@ -1,9 +1,12 @@
 package org.motechproject.csd.domain;
 
+import org.motechproject.csd.constants.CSDConstants;
+import org.motechproject.mds.annotations.Access;
 import org.motechproject.mds.annotations.Cascade;
 import org.motechproject.mds.annotations.Entity;
 import org.motechproject.mds.annotations.Field;
 import org.motechproject.mds.annotations.UIDisplayable;
+import org.motechproject.mds.util.SecurityMode;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -36,23 +39,24 @@ import javax.xml.bind.annotation.XmlType;
 @Entity(maxFetchDepth = 1)
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType(propOrder = { "codedType", "equipment", "purpose", "certificate" })
+@Access(value = SecurityMode.PERMISSIONS, members = {CSDConstants.MANAGE_CSD})
 public class ContactPoint extends AbstractID {
 
     @UIDisplayable(position = 0)
-    @Field(required = true)
+    @Field(required = true, tooltip = "This is the type of communication endpoint.")
     @Cascade(delete = true)
     private CodedType codedType;
 
     @UIDisplayable(position = 1)
-    @Field
+    @Field(tooltip = "This describes any equipment needed to access this communication endpoint.")
     private String equipment;
 
     @UIDisplayable(position = 2)
-    @Field
+    @Field(tooltip = "This is the purpose when you would use this communication endpoint.")
     private String purpose;
 
     @UIDisplayable(position = 3)
-    @Field
+    @Field(tooltip = "This is an encryption certificate that you would use to access this communication endpoint.")
     private String certificate;
 
     public ContactPoint() {

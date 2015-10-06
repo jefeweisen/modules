@@ -7,6 +7,7 @@ import org.motechproject.cmslite.model.StreamContent;
 import org.motechproject.cmslite.model.StringContent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,36 +22,40 @@ public class CMSLiteServiceImpl implements CMSLiteService {
     private StreamContentService streamContentService;
 
     @Override
+    @Transactional
     public StringContent getStringContent(String language, String name) throws ContentNotFoundException {
-        List<StringContent> stringContents = stringContentService.findByLanguageAndName(language, name);
-        if (stringContents == null || stringContents.size() == 0) {
+        StringContent stringContent = stringContentService.findByLanguageAndName(language, name);
+        if (stringContent == null) {
             throw new ContentNotFoundException();
         }
-        return stringContents.get(0);
+        return stringContent;
     }
 
     @Override
+    @Transactional
     public StreamContent getStreamContent(String language, String name) throws ContentNotFoundException {
-        List<StreamContent> streamContents = streamContentService.findByLanguageAndName(language, name);
-        if (streamContents == null || streamContents.size() == 0) {
+        StreamContent streamContent = streamContentService.findByLanguageAndName(language, name);
+        if (streamContent == null) {
             throw new ContentNotFoundException();
         }
-        StreamContent streamContent = streamContents.get(0);
         streamContent.setContent(retrieveStreamContentData(streamContent));
         return streamContent;
     }
 
     @Override
+    @Transactional
     public void removeStreamContent(String language, String name) throws ContentNotFoundException {
         streamContentService.delete(getStreamContent(language, name));
     }
 
     @Override
+    @Transactional
     public void removeStringContent(String language, String name) throws ContentNotFoundException {
         stringContentService.delete(getStringContent(language, name));
     }
 
     @Override
+    @Transactional
     public List<Content> getAllContents() {
         List<Content> contents = new ArrayList<>();
         contents.addAll(streamContentService.retrieveAll());
@@ -60,16 +65,19 @@ public class CMSLiteServiceImpl implements CMSLiteService {
     }
 
     @Override
+    @Transactional
     public StreamContent getStreamContent(long streamContentId) {
         return streamContentService.findById(streamContentId);
     }
 
     @Override
+    @Transactional
     public StringContent getStringContent(long stringContentId) {
         return stringContentService.findById(stringContentId);
     }
 
     @Override
+    @Transactional
     public void addContent(Content content) {
         if (content == null || content.getLanguage() == null || content.getName() == null) {
             throw new IllegalArgumentException("Content or language or name should not be null");
@@ -83,18 +91,21 @@ public class CMSLiteServiceImpl implements CMSLiteService {
     }
 
     @Override
+    @Transactional
     public boolean isStreamContentAvailable(String language, String name) {
-        List<StreamContent> streamContents = streamContentService.findByLanguageAndName(language, name);
-        return !(streamContents == null || streamContents.size() == 0);
+        StreamContent streamContent = streamContentService.findByLanguageAndName(language, name);
+        return streamContent != null;
     }
 
     @Override
+    @Transactional
     public boolean isStringContentAvailable(String language, String name) {
-        List<StringContent> stringContents = stringContentService.findByLanguageAndName(language, name);
-        return !(stringContents == null || stringContents.size() == 0);
+        StringContent stringContent = stringContentService.findByLanguageAndName(language, name);
+        return stringContent != null;
     }
 
     @Override
+    @Transactional
     public Byte[] retrieveStreamContentData(StreamContent instance) {
         return (Byte[]) streamContentService.getDetachedField(instance, "content");
     }

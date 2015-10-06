@@ -1,9 +1,12 @@
 package org.motechproject.csd.domain;
 
+import org.motechproject.csd.constants.CSDConstants;
+import org.motechproject.mds.annotations.Access;
 import org.motechproject.mds.annotations.Cascade;
 import org.motechproject.mds.annotations.Entity;
 import org.motechproject.mds.annotations.Field;
 import org.motechproject.mds.annotations.UIDisplayable;
+import org.motechproject.mds.util.SecurityMode;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -51,20 +54,22 @@ import java.util.Set;
 @Entity
 @XmlAccessorType(XmlAccessType.NONE)
 @XmlType(propOrder = { "services", "operatingHours", "extensions" })
+@Access(value = SecurityMode.PERMISSIONS, members = {CSDConstants.MANAGE_CSD})
 public class ProviderFacility extends AbstractUniqueID {
 
     @UIDisplayable(position = 0)
-    @Field(name = "provider_facility_services")
+    @Field(name = "provider_facility_services", tooltip = "The services that this provider offers at this facility.")
     @Cascade(delete = true)
     private Set<ProviderFacilityService> services = new HashSet<>();
 
     @UIDisplayable(position = 1)
-    @Field(name = "provider_facility_operating_hours")
+    @Field(name = "provider_facility_operating_hours", tooltip = "The operating hours when this provider offers services " +
+            "at this facility.")
     @Cascade(delete = true)
     private Set<OperatingHours> operatingHours = new HashSet<>();
 
     @UIDisplayable(position = 2)
-    @Field(name = "provider_facility_extensions")
+    @Field(name = "provider_facility_extensions", tooltip = "This is a locally defined extension for this entity.")
     @Cascade(delete = true)
     private Set<Extension> extensions = new HashSet<>();
 

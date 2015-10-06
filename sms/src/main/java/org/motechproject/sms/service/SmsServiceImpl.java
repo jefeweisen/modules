@@ -5,26 +5,27 @@ import org.motechproject.event.MotechEvent;
 import org.motechproject.event.listener.EventRelay;
 import org.motechproject.scheduler.contract.RunOnceSchedulableJob;
 import org.motechproject.scheduler.service.MotechSchedulerService;
-import org.motechproject.sms.SmsEventParams;
-import org.motechproject.sms.SmsEventSubjects;
 import org.motechproject.sms.audit.DeliveryStatus;
 import org.motechproject.sms.audit.SmsRecord;
 import org.motechproject.sms.audit.SmsRecordsDataService;
 import org.motechproject.sms.configs.Config;
 import org.motechproject.sms.templates.Template;
+import org.motechproject.sms.util.SmsEventParams;
+import org.motechproject.sms.util.SmsEventSubjects;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
 import static org.motechproject.commons.date.util.DateUtil.now;
-import static org.motechproject.sms.SmsEvents.outboundEvent;
 import static org.motechproject.sms.audit.SmsDirection.OUTBOUND;
+import static org.motechproject.sms.util.SmsEvents.outboundEvent;
 
 //todo: final pass over how we use motechId system-wide
 
@@ -110,10 +111,11 @@ public class SmsServiceImpl implements SmsService {
         return UUID.randomUUID().toString().replace("-", "");
     }
 
-    @Override
     /**
      * Sends an SMS
      */
+    @Override
+    @Transactional
     public void send(OutgoingSms sms) {
 
         if (!configService.hasConfigs()) {
@@ -153,7 +155,7 @@ public class SmsServiceImpl implements SmsService {
                 for (String part : messageParts) {
                     String motechId = generateMotechId();
                     MotechEvent event = outboundEvent(SmsEventSubjects.SCHEDULED, config.getName(), recipients, part,
-                            motechId, null, null, null, null);
+                            motechId, null, null, null, null, sms.getCustomParams());
                     //MOTECH scheduler needs unique job ids, so adding motechId as job_id_key will do that
                     event.getParameters().put(MotechSchedulerService.JOB_ID_KEY, motechId);
                     event.getParameters().put(SmsEventParams.DELIVERY_TIME, dt);
@@ -172,7 +174,7 @@ public class SmsServiceImpl implements SmsService {
                 for (String part : messageParts) {
                     String motechId = generateMotechId();
                     eventRelay.sendEventMessage(outboundEvent(SmsEventSubjects.PENDING, config.getName(), recipients,
-                            part, motechId, null, null, null, null));
+                            part, motechId, null, null, null, null, sms.getCustomParams()));
                     LOGGER.info("Sending message [{}] to [{}].", part.replace("\n", "\\n"), recipients);
                     for (String recipient : recipients) {
                         smsRecordsDataService.create(new SmsRecord(config.getName(), OUTBOUND, recipient, part, now(),

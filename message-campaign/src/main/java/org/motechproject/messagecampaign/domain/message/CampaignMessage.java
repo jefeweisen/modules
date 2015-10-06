@@ -11,6 +11,7 @@ import org.joda.time.LocalDate;
 import org.motechproject.commons.date.util.DateUtil;
 import org.motechproject.messagecampaign.domain.campaign.AbsoluteCampaign;
 import org.motechproject.messagecampaign.domain.campaign.Campaign;
+import org.motechproject.messagecampaign.domain.campaign.CampaignMessageRecord;
 
 public class CampaignMessage {
     private String name;

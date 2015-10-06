@@ -15,16 +15,17 @@ import org.motechproject.messagecampaign.EventKeys;
 import org.motechproject.messagecampaign.builder.EnrollRequestBuilder;
 import org.motechproject.messagecampaign.contract.CampaignRequest;
 import org.motechproject.messagecampaign.dao.CampaignEnrollmentDataService;
+import org.motechproject.messagecampaign.dao.CampaignMessageRecordService;
 import org.motechproject.messagecampaign.dao.CampaignRecordService;
 import org.motechproject.messagecampaign.domain.campaign.*;
-import org.motechproject.messagecampaign.exception.CampaignNotFoundException;
 import org.motechproject.messagecampaign.domain.message.CampaignMessage;
+import org.motechproject.messagecampaign.exception.CampaignNotFoundException;
+import org.motechproject.messagecampaign.exception.EnrollmentAlreadyExists;
+import org.motechproject.messagecampaign.exception.EnrollmentNotFoundException;
 import org.motechproject.messagecampaign.scheduler.CampaignSchedulerFactory;
 import org.motechproject.messagecampaign.scheduler.CampaignSchedulerService;
 import org.motechproject.messagecampaign.scheduler.JobIdFactory;
 import org.motechproject.messagecampaign.search.Criterion;
-import org.motechproject.messagecampaign.domain.campaign.CampaignRecurrence;
-import org.motechproject.messagecampaign.exception.EnrollmentNotFoundException;
 import org.motechproject.scheduler.contract.CronJobId;
 import org.motechproject.scheduler.contract.JobId;
 import org.motechproject.scheduler.service.MotechSchedulerService;
@@ -52,6 +53,8 @@ public class MessageCampaignServiceImplTest {
     @Mock
     private CampaignRecordService campaignRecordService;
     @Mock
+    private CampaignMessageRecordService campaignMessageRecordService;
+    @Mock
     private EnrollmentService enrollmentService;
     @Mock
     private MotechSchedulerService schedulerService;
@@ -73,8 +76,15 @@ public class MessageCampaignServiceImplTest {
     @Before
     public void setUp() {
         initMocks(this);
-        messageCampaignService = new MessageCampaignServiceImpl(enrollmentService, campaignEnrollmentDataService, campaignEnrollmentRecordMapper,
-                campaignSchedulerFactory, campaignRecordService, eventRelay, schedulerService);
+        messageCampaignService = new MessageCampaignServiceImpl();
+        messageCampaignService.setCampaignEnrollmentDataService(campaignEnrollmentDataService);
+        messageCampaignService.setCampaignEnrollmentRecordMapper(campaignEnrollmentRecordMapper);
+        messageCampaignService.setCampaignMessageRecordService(campaignMessageRecordService);
+        messageCampaignService.setCampaignRecordService(campaignRecordService);
+        messageCampaignService.setRelay(eventRelay);
+        messageCampaignService.setSchedulerService(schedulerService);
+        messageCampaignService.setCampaignSchedulerFactory(campaignSchedulerFactory);
+        messageCampaignService.setEnrollmentService(enrollmentService);
     }
 
     @Test
@@ -343,7 +353,7 @@ public class MessageCampaignServiceImplTest {
         messageCampaignService.updateEnrollment(new CampaignRequest(), 9001L);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = EnrollmentAlreadyExists.class)
     public void shouldThrowExceptionForDuplicateExtIdAndCampaignName() {
         CampaignEnrollment enrollment = new CampaignEnrollment("extId", "PREGNANCY");
         enrollment.setId(9001L);

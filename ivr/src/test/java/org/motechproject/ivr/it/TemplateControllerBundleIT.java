@@ -75,7 +75,7 @@ public class TemplateControllerBundleIT extends BasePaxIT {
     public void shouldNotLogWhenPassedInvalidConfig() throws Exception {
 
         //Create a config
-        configService.updateConfigs(Arrays.asList(new Config("foo", false, null, null, null, null, null, null, null, false, null)));
+        configService.updateConfigs(Arrays.asList(new Config("foo", false, null, null, null, null, null, null, null, false, null, false, null)));
 
         //Create & send a CDR status callback
         URIBuilder builder = new URIBuilder();
@@ -96,16 +96,16 @@ public class TemplateControllerBundleIT extends BasePaxIT {
 
         //Create a config
         List<String> ignoredStatusFields = Arrays.asList("ignoreme", "ignoreme2");
-        configService.updateConfigs(Arrays.asList(new Config("conf", false, null, null, ignoredStatusFields, "FROM:from", null, null, null, false, null)));
+        configService.updateConfigs(Arrays.asList(new Config("conf", false, null, null, ignoredStatusFields, "FROM:from", null, "ANS: NEW STATUS", null, false, null, false, null)));
 
         // Create a CDR we can use as a datasource in the template. A more elegant way to do that would be to create
         // an EUDE, but this works just as well.
         callDetailRecordDataService.create(new CallDetailRecord("world", null, null, null, null, null, null, "123abc",
-                null, null));
+                "123abc", null, null, null));
 
         //Create a template
         templateService.updateTemplates(Arrays.asList(new Template("tmpl",
-                "#set( $params = {\"motechCallId\" : \"123abc\"} )\n" +
+                "#set( $params = {\"providerCallId\" : \"123abc\"} )\n" +
                         "Hello, $dataServices.findMany(\"org.motechproject.ivr.domain.CallDetailRecord\", " +
                         "\"Find By Provider Call Id\", $params).get(0).configName"
         )));

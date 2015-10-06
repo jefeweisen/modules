@@ -35,6 +35,10 @@ public class CommcareDataProviderBuilder {
     private CommcareSchemaService schemaService;
     private CommcareConfigService configService;
 
+    /**
+     * Builds the body of the data provider into JSON form, using all available Commcare configs.
+     * @return the body of the provider, or null if there are no configuration available
+     */
     public String generateDataProvider() {
         Map<String, Object> model = new HashMap<>();
         EscapeTool escapeTool = new EscapeTool();
@@ -48,18 +52,19 @@ public class CommcareDataProviderBuilder {
                     schemaService.getAllCaseTypes(config.getName())));
         }
 
+        if (configurations.isEmpty()) {
+            // return null in case of no configurations - the provider won't get registered
+            return null;
+        }
+
         model.put("configurations", configurations);
         model.put("esc", escapeTool);
         model.put("trimmer", trimmer);
+        model.put("DisplayNameHelper", DisplayNameHelper.class);
 
         StringWriter writer = new StringWriter();
 
-        try {
-            VelocityEngineUtils.mergeTemplate(velocityEngine, COMMCARE_TASK_DATA_PROVIDER, model, writer);
-        } catch (Exception e) {
-            LOGGER.error("An error occured while trying to merge velocity template " +
-                    COMMCARE_TASK_DATA_PROVIDER + " with data.", e);
-        }
+        VelocityEngineUtils.mergeTemplate(velocityEngine, COMMCARE_TASK_DATA_PROVIDER, model, writer);
 
         String providerJson = writer.toString();
 
