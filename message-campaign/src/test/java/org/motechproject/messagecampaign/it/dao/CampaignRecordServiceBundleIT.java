@@ -11,7 +11,7 @@ import org.motechproject.messagecampaign.dao.CampaignRecordService;
 import org.motechproject.messagecampaign.domain.campaign.*;
 import org.motechproject.messagecampaign.domain.message.CampaignMessage;
 import org.motechproject.messagecampaign.domain.campaign.CampaignMessageRecord;
-import org.motechproject.messagecampaign.domain.campaign.CampaignRecurrence;
+import org.motechproject.messagecampaign.domain.campaign.CampaignRecord;
 import org.motechproject.testing.osgi.BasePaxIT;
 import org.motechproject.testing.osgi.container.MotechNativeTestContainerFactory;
 import org.ops4j.pax.exam.ExamFactory;
@@ -115,7 +115,7 @@ public class CampaignRecordServiceBundleIT extends BasePaxIT {
     @Test
     public void shouldDeleteCampaignRecords() {
 
-        CampaignRecurrence campaign = createCampaignRecord();
+        CampaignRecord campaign = createCampaignRecord();
 
         campaignRecordService.create(campaign);
 
@@ -129,8 +129,8 @@ public class CampaignRecordServiceBundleIT extends BasePaxIT {
     @Test
     public void shouldFindCampaignsByName() {
 
-        CampaignRecurrence campaign = createCampaignRecord();
-        CampaignRecurrence campaign2 = createCampaignRecord();
+        CampaignRecord campaign = createCampaignRecord();
+        CampaignRecord campaign2 = createCampaignRecord();
         campaign2.setName("Different Name");
 
         campaignRecordService.create(campaign);
@@ -169,8 +169,8 @@ public class CampaignRecordServiceBundleIT extends BasePaxIT {
         assertEquals(new HashSet<>(asList(expectedFormats)), new HashSet<>(actualFormats));
     }
 
-    private CampaignRecurrence createCampaignRecord() {
-        CampaignRecurrence campaign = new CampaignRecurrence();
+    private CampaignRecord createCampaignRecord() {
+        CampaignRecord campaign = new CampaignRecord();
         campaign.setCampaignType(CampaignType.ABSOLUTE);
         campaign.setMaxDuration("10 week");
         campaign.setName("CampaignName");

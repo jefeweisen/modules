@@ -67,7 +67,7 @@ public class MessageCampaignServiceImplTest {
     @Mock
     private CampaignSchedulerFactory campaignSchedulerFactory;
     @Mock
-    private CampaignRecurrence campaignRecurrence;
+    private CampaignRecord campaignRecord;
     @Mock
     private EventRelay eventRelay;
     @Mock
@@ -91,8 +91,8 @@ public class MessageCampaignServiceImplTest {
     public void shouldCreateEnrollmentWhenScheduleIsStarted() {
         Campaign campaign = mock(Campaign.class);
 
-        when(campaignRecordService.findByName("testCampaign")).thenReturn(campaignRecurrence);
-        when(campaignRecurrence.toCampaign()).thenReturn(campaign);
+        when(campaignRecordService.findByName("testCampaign")).thenReturn(campaignRecord);
+        when(campaignRecord.toCampaign()).thenReturn(campaign);
 
         CampaignSchedulerService campaignScheduler = mock(CampaignSchedulerService.class);
         when(campaignSchedulerFactory.getCampaignScheduler("testCampaign")).thenReturn(campaignScheduler);
@@ -120,8 +120,8 @@ public class MessageCampaignServiceImplTest {
     @Test
     public void shouldUnRegisterEnrollmentWhenScheduleIsStopped() {
         Campaign campaign = mock(Campaign.class);
-        when(campaignRecordService.findByName("testCampaign")).thenReturn(campaignRecurrence);
-        when(campaignRecurrence.toCampaign()).thenReturn(campaign);
+        when(campaignRecordService.findByName("testCampaign")).thenReturn(campaignRecord);
+        when(campaignRecord.toCampaign()).thenReturn(campaign);
         CampaignSchedulerService campaignScheduler = mock(CampaignSchedulerService.class);
         when(campaignSchedulerFactory.getCampaignScheduler("testCampaign")).thenReturn(campaignScheduler);
 
@@ -147,8 +147,8 @@ public class MessageCampaignServiceImplTest {
     @Test
     public void shouldUnregisterAllCampaignsMatchingQuery() {
         Campaign campaign = mock(Campaign.class);
-        when(campaignRecordService.findByName("testCampaign")).thenReturn(campaignRecurrence);
-        when(campaignRecurrence.toCampaign()).thenReturn(campaign);
+        when(campaignRecordService.findByName("testCampaign")).thenReturn(campaignRecord);
+        when(campaignRecord.toCampaign()).thenReturn(campaign);
 
         CampaignEnrollment enrollment1 = new CampaignEnrollment("external_id_1", "testCampaign");
         CampaignEnrollment enrollment2 = new CampaignEnrollment("external_id_2", "testCampaign");
@@ -182,8 +182,8 @@ public class MessageCampaignServiceImplTest {
         CampaignRequest campaignRequest = new CampaignRequest("entity_1", "campaign-name", null, null);
 
         AbsoluteCampaign absoluteCampaign = mock(AbsoluteCampaign.class);
-        when(campaignRecordService.findByName("campaign-name")).thenReturn(campaignRecurrence);
-        when(campaignRecurrence.toCampaign()).thenReturn(absoluteCampaign);
+        when(campaignRecordService.findByName("campaign-name")).thenReturn(campaignRecord);
+        when(campaignRecord.toCampaign()).thenReturn(absoluteCampaign);
 
         CampaignSchedulerService campaignScheduler = mock(CampaignSchedulerService.class);
         when(campaignSchedulerFactory.getCampaignScheduler("campaign-name")).thenReturn(campaignScheduler);
@@ -223,8 +223,8 @@ public class MessageCampaignServiceImplTest {
     public void shouldGetCampaignTimings() {
         AbsoluteCampaign campaign = mock(AbsoluteCampaign.class);
 
-        when(campaignRecordService.findByName("campaign")).thenReturn(campaignRecurrence);
-        when(campaignRecurrence.toCampaign()).thenReturn(campaign);
+        when(campaignRecordService.findByName("campaign")).thenReturn(campaignRecord);
+        when(campaignRecord.toCampaign()).thenReturn(campaign);
 
         CampaignSchedulerService campaignScheduler = mock(CampaignSchedulerService.class);
         when(campaignSchedulerFactory.getCampaignScheduler("campaign")).thenReturn(campaignScheduler);
@@ -244,8 +244,8 @@ public class MessageCampaignServiceImplTest {
     public void shouldGetEmptyCampaignTimingsMapIfEnrollmentIsNotActive() {
         AbsoluteCampaign campaign = mock(AbsoluteCampaign.class);
 
-        when(campaignRecordService.findByName("campaign")).thenReturn(campaignRecurrence);
-        when(campaignRecurrence.toCampaign()).thenReturn(campaign);
+        when(campaignRecordService.findByName("campaign")).thenReturn(campaignRecord);
+        when(campaignRecord.toCampaign()).thenReturn(campaign);
 
         CampaignSchedulerService campaignScheduler = mock(CampaignSchedulerService.class);
         when(campaignSchedulerFactory.getCampaignScheduler("campaign")).thenReturn(campaignScheduler);
@@ -263,8 +263,8 @@ public class MessageCampaignServiceImplTest {
 
     @Test
     public void shouldSaveCampaigns() {
-        messageCampaignService.saveCampaign(campaignRecurrence);
-        verify(campaignRecordService).create(campaignRecurrence);
+        messageCampaignService.saveCampaign(campaignRecord);
+        verify(campaignRecordService).create(campaignRecord);
     }
 
     @Test
@@ -272,14 +272,14 @@ public class MessageCampaignServiceImplTest {
         CampaignEnrollment enrollment = new CampaignEnrollment("extID", "PREGNANCY");
 
         when(campaignSchedulerFactory.getCampaignScheduler("PREGNANCY")).thenReturn(campaignSchedulerService);
-        when(campaignRecordService.findByName("PREGNANCY")).thenReturn(campaignRecurrence);
+        when(campaignRecordService.findByName("PREGNANCY")).thenReturn(campaignRecord);
         when(enrollmentService.search(any(CampaignEnrollmentsQuery.class)))
                 .thenReturn(asList(enrollment));
 
         messageCampaignService.deleteCampaign("PREGNANCY");
 
         verify(campaignRecordService).findByName("PREGNANCY");
-        verify(campaignRecordService).delete(campaignRecurrence);
+        verify(campaignRecordService).delete(campaignRecord);
 
         ArgumentCaptor<CampaignEnrollmentsQuery> captor = ArgumentCaptor.forClass(CampaignEnrollmentsQuery.class);
         verify(enrollmentService).search(captor.capture());
@@ -295,15 +295,15 @@ public class MessageCampaignServiceImplTest {
 
     @Test
     public void shouldRetrieveCampaignByName() {
-        when(campaignRecordService.findByName("PREGNANCY")).thenReturn(campaignRecurrence);
-        assertEquals(campaignRecurrence, messageCampaignService.getCampaignRecord("PREGNANCY"));
+        when(campaignRecordService.findByName("PREGNANCY")).thenReturn(campaignRecord);
+        assertEquals(campaignRecord, messageCampaignService.getCampaignRecord("PREGNANCY"));
         verify(campaignRecordService).findByName("PREGNANCY");
     }
 
     @Test
     public void shouldRetrieveAllCampaigns() {
-        when(campaignRecordService.retrieveAll()).thenReturn(asList(campaignRecurrence));
-        assertEquals(asList(campaignRecurrence), messageCampaignService.getAllCampaignRecords());
+        when(campaignRecordService.retrieveAll()).thenReturn(asList(campaignRecord));
+        assertEquals(asList(campaignRecord), messageCampaignService.getAllCampaignRecords());
         verify(campaignRecordService).retrieveAll();
     }
 
@@ -371,7 +371,7 @@ public class MessageCampaignServiceImplTest {
     @Test
     public void shouldGetLatestCampaignMessage() {
         CampaignEnrollment enrollment = new CampaignEnrollment("externalId", "campaignName");
-        CampaignRecurrence record = new CampaignRecurrence();
+        CampaignRecord record = new CampaignRecord();
         record.setCampaignType(CampaignType.CRON);
         record.setName("campaignName");
 
@@ -393,8 +393,8 @@ public class MessageCampaignServiceImplTest {
         when(campaignSchedulerService.getJobId(messageRecord2.getMessageKey(), "externalId", "campaignName")).thenReturn(jobId2);
         when(campaignEnrollmentDataService.findByExternalIdAndCampaignName(enrollment.getExternalId(),
                 enrollment.getCampaignName())).thenReturn(enrollment);
-        when(campaignRecordService.findByName(enrollment.getCampaignName())).thenReturn(campaignRecurrence);
-        when(campaignRecurrence.toCampaign()).thenReturn(campaign);
+        when(campaignRecordService.findByName(enrollment.getCampaignName())).thenReturn(campaignRecord);
+        when(campaignRecord.toCampaign()).thenReturn(campaign);
         when(schedulerService.getPreviousFireDate(jobId1)).thenReturn(new DateTime(2002, 5, 15, 12, 0));
         when(schedulerService.getPreviousFireDate(jobId2)).thenReturn(new DateTime(2002, 5, 15, 11, 55));
 
@@ -406,7 +406,7 @@ public class MessageCampaignServiceImplTest {
     @Test
     public void shouldNotGetLatestCampaignMessageIfNothingSent() {
         CampaignEnrollment enrollment = new CampaignEnrollment("externalId", "campaignName");
-        CampaignRecurrence record = new CampaignRecurrence();
+        CampaignRecord record = new CampaignRecord();
         record.setCampaignType(CampaignType.CRON);
         record.setName("campaignName");
 
@@ -423,8 +423,8 @@ public class MessageCampaignServiceImplTest {
         when(campaignSchedulerService.getJobId(messageRecord1.getMessageKey(), "externalId", "campaignName")).thenReturn(jobId1);
         when(campaignEnrollmentDataService.findByExternalIdAndCampaignName(enrollment.getExternalId(),
                 enrollment.getCampaignName())).thenReturn(enrollment);
-        when(campaignRecordService.findByName(enrollment.getCampaignName())).thenReturn(campaignRecurrence);
-        when(campaignRecurrence.toCampaign()).thenReturn(campaign);
+        when(campaignRecordService.findByName(enrollment.getCampaignName())).thenReturn(campaignRecord);
+        when(campaignRecord.toCampaign()).thenReturn(campaign);
         when(schedulerService.getPreviousFireDate(jobId1)).thenReturn(new DateTime(2020, 5, 15, 12, 0));
 
         String latestCampaignMessage = messageCampaignService.getLatestCampaignMessage("campaignName", "externalId");
@@ -435,7 +435,7 @@ public class MessageCampaignServiceImplTest {
     @Test
     public void shouldGetNextCampaignMessage() {
         CampaignEnrollment enrollment = new CampaignEnrollment("externalId", "campaignName");
-        CampaignRecurrence record = new CampaignRecurrence();
+        CampaignRecord record = new CampaignRecord();
         record.setCampaignType(CampaignType.CRON);
         record.setName("campaignName");
 
@@ -457,8 +457,8 @@ public class MessageCampaignServiceImplTest {
         when(campaignSchedulerService.getJobId(messageRecord2.getMessageKey(), "externalId", "campaignName")).thenReturn(jobId2);
         when(campaignEnrollmentDataService.findByExternalIdAndCampaignName(enrollment.getExternalId(),
                 enrollment.getCampaignName())).thenReturn(enrollment);
-        when(campaignRecordService.findByName(enrollment.getCampaignName())).thenReturn(campaignRecurrence);
-        when(campaignRecurrence.toCampaign()).thenReturn(campaign);
+        when(campaignRecordService.findByName(enrollment.getCampaignName())).thenReturn(campaignRecord);
+        when(campaignRecord.toCampaign()).thenReturn(campaign);
         when(schedulerService.getNextFireDate(jobId1)).thenReturn(new DateTime(2020, 5, 15, 12, 0));
         when(schedulerService.getNextFireDate(jobId2)).thenReturn(new DateTime(2020, 5, 15, 11, 55));
 
@@ -470,7 +470,7 @@ public class MessageCampaignServiceImplTest {
     @Test
     public void shouldNotGetNextCampaignMessageIfNothingMoreToSend() {
         CampaignEnrollment enrollment = new CampaignEnrollment("externalId", "campaignName");
-        CampaignRecurrence record = new CampaignRecurrence();
+        CampaignRecord record = new CampaignRecord();
         record.setCampaignType(CampaignType.CRON);
         record.setName("campaignName");
 
@@ -487,8 +487,8 @@ public class MessageCampaignServiceImplTest {
         when(campaignSchedulerService.getJobId(messageRecord1.getMessageKey(), "externalId", "campaignName")).thenReturn(jobId1);
         when(campaignEnrollmentDataService.findByExternalIdAndCampaignName(enrollment.getExternalId(),
                 enrollment.getCampaignName())).thenReturn(enrollment);
-        when(campaignRecordService.findByName(enrollment.getCampaignName())).thenReturn(campaignRecurrence);
-        when(campaignRecurrence.toCampaign()).thenReturn(campaign);
+        when(campaignRecordService.findByName(enrollment.getCampaignName())).thenReturn(campaignRecord);
+        when(campaignRecord.toCampaign()).thenReturn(campaign);
         when(schedulerService.getNextFireDate(jobId1)).thenReturn(new DateTime(1920, 5, 15, 12, 0));
 
         String nextCampaignMessage = messageCampaignService.getNextCampaignMessage("campaignName", "externalId");

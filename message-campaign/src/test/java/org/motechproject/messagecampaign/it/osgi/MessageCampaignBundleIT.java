@@ -15,7 +15,7 @@ import org.motechproject.messagecampaign.contract.CampaignRequest;
 import org.motechproject.messagecampaign.dao.CampaignEnrollmentDataService;
 import org.motechproject.messagecampaign.dao.CampaignMessageRecordService;
 import org.motechproject.messagecampaign.dao.CampaignRecordService;
-import org.motechproject.messagecampaign.domain.campaign.CampaignRecurrence;
+import org.motechproject.messagecampaign.domain.campaign.CampaignRecord;
 import org.motechproject.messagecampaign.domain.campaign.CampaignType;
 import org.motechproject.messagecampaign.service.CampaignEnrollmentRecord;
 import org.motechproject.messagecampaign.service.CampaignEnrollmentsQuery;
@@ -81,7 +81,7 @@ public class MessageCampaignBundleIT extends BasePaxIT {
 
     @Test
     public void testMessageCampaignService() {
-        CampaignRecurrence campaign = new CampaignRecurrence();
+        CampaignRecord campaign = new CampaignRecord();
         campaign.setName("PREGNANCY_CMP");
         campaign.setCampaignType(CampaignType.ABSOLUTE);
 

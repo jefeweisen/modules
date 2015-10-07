@@ -8,7 +8,7 @@ import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.motechproject.messagecampaign.domain.campaign.CampaignRecurrence;
+import org.motechproject.messagecampaign.domain.campaign.CampaignRecord;
 import org.motechproject.messagecampaign.domain.campaign.CampaignType;
 import org.motechproject.messagecampaign.service.MessageCampaignService;
 import org.motechproject.messagecampaign.domain.campaign.CampaignMessageRecord;
@@ -61,7 +61,7 @@ public class CampaignControllerTest {
                 status().is(HttpStatus.OK.value())
         );
 
-        ArgumentCaptor<CampaignRecurrence> captor = ArgumentCaptor.forClass(CampaignRecurrence.class);
+        ArgumentCaptor<CampaignRecord> captor = ArgumentCaptor.forClass(CampaignRecord.class);
         verify(messageCampaignService).saveCampaign(captor.capture());
 
         assertEquals(ABSOLUTE_CAMPAIGN_NAME, captor.getValue().getName());
@@ -71,9 +71,9 @@ public class CampaignControllerTest {
 
     @Test
     public void shouldReturnCampaign() throws Exception {
-        CampaignRecurrence campaignRecurrence = createAbsoluteCampaignRecord();
+        CampaignRecord campaignRecord = createAbsoluteCampaignRecord();
 
-        when(messageCampaignService.getCampaignRecord(ABSOLUTE_CAMPAIGN_NAME)).thenReturn(campaignRecurrence);
+        when(messageCampaignService.getCampaignRecord(ABSOLUTE_CAMPAIGN_NAME)).thenReturn(campaignRecord);
 
         final String expectedResponse = loadJson("rest/campaigns/campaignDetails.json");
 
@@ -105,10 +105,10 @@ public class CampaignControllerTest {
 
     @Test
     public void shouldReturnAllCampaign() throws Exception {
-        CampaignRecurrence campaignRecurrence = createAbsoluteCampaignRecord();
-        CampaignRecurrence campaignRecurrence2 = createRepeatIntervalCampaignRecord();
+        CampaignRecord campaignRecord = createAbsoluteCampaignRecord();
+        CampaignRecord campaignRecurrence2 = createRepeatIntervalCampaignRecord();
 
-        when(messageCampaignService.getAllCampaignRecords()).thenReturn(asList(campaignRecurrence,
+        when(messageCampaignService.getAllCampaignRecords()).thenReturn(asList(campaignRecord,
                 campaignRecurrence2));
 
         final String expectedResponse = loadJson("rest/campaigns/campaignList.json");
@@ -137,10 +137,10 @@ public class CampaignControllerTest {
         verify(messageCampaignService).deleteCampaign(ABSOLUTE_CAMPAIGN_NAME);
     }
 
-    private CampaignRecurrence createAbsoluteCampaignRecord() {
-        CampaignRecurrence campaignRecurrence = new CampaignRecurrence();
-        campaignRecurrence.setName(ABSOLUTE_CAMPAIGN_NAME);
-        campaignRecurrence.setCampaignType(CampaignType.ABSOLUTE);
+    private CampaignRecord createAbsoluteCampaignRecord() {
+        CampaignRecord campaignRecord = new CampaignRecord();
+        campaignRecord.setName(ABSOLUTE_CAMPAIGN_NAME);
+        campaignRecord.setCampaignType(CampaignType.ABSOLUTE);
 
         CampaignMessageRecord campaignMessageRecord = new CampaignMessageRecord();
         campaignMessageRecord.setName("First");
@@ -158,15 +158,15 @@ public class CampaignControllerTest {
         campaignMessageRecord2.setDate(new LocalDate(2013, 6, 22));
         campaignMessageRecord2.setStartTime("10:30:00");
 
-        campaignRecurrence.setMessages(asList(campaignMessageRecord, campaignMessageRecord2));
-        return campaignRecurrence;
+        campaignRecord.setMessages(asList(campaignMessageRecord, campaignMessageRecord2));
+        return campaignRecord;
     }
 
-    private CampaignRecurrence createRepeatIntervalCampaignRecord() {
-        CampaignRecurrence campaignRecurrence = new CampaignRecurrence();
-        campaignRecurrence.setName(REPEAT_INTERVAL_CAMPAIGN_NAME);
-        campaignRecurrence.setCampaignType(CampaignType.REPEAT_INTERVAL);
-        campaignRecurrence.setMaxDuration(new Period("5 weeks"));
+    private CampaignRecord createRepeatIntervalCampaignRecord() {
+        CampaignRecord campaignRecord = new CampaignRecord();
+        campaignRecord.setName(REPEAT_INTERVAL_CAMPAIGN_NAME);
+        campaignRecord.setCampaignType(CampaignType.REPEAT_INTERVAL);
+        campaignRecord.setMaxDuration(new Period("5 weeks"));
 
         CampaignMessageRecord campaignMessageRecord = new CampaignMessageRecord();
         campaignMessageRecord.setName("Weekly Message #1");
@@ -192,8 +192,8 @@ public class CampaignControllerTest {
         campaignMessageRecord3.setRepeatEvery("12 Days");
         campaignMessageRecord3.setStartTime("10:30");
 
-        campaignRecurrence.setMessages(asList(campaignMessageRecord, campaignMessageRecord2, campaignMessageRecord3));
-        return campaignRecurrence;
+        campaignRecord.setMessages(asList(campaignMessageRecord, campaignMessageRecord2, campaignMessageRecord3));
+        return campaignRecord;
     }
 
     private String loadJson(String filename) throws IOException {
