@@ -52,7 +52,9 @@ public class CampaignRecord {
     @Field(required = true, tooltip = "The CampaignType determines the type of message that will apply to the campaign")
     private CampaignType campaignType;
 
+    @Field
     private Period maxDuration;
+
     /**
      * Specifies the maximum duration of this message campaign.
      */

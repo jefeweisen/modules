@@ -81,7 +81,7 @@ public class CampaignMessage {
     }
 
     public void validate() {
-        throw new RuntimeException("TODO: Not implemented");
+        //throw new RuntimeException("TODO: Not implemented");
     }
 
     // Former functionality of former specific subclasses
