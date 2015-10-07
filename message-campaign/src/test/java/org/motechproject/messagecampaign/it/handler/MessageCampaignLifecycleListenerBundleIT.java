@@ -2,6 +2,7 @@ package org.motechproject.messagecampaign.it.handler;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
+import org.joda.time.Period;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -100,7 +101,7 @@ public class MessageCampaignLifecycleListenerBundleIT extends BasePaxIT {
         assertEquals(asList(newDateTime(2020, 7, 20, 10, 30, 0)), endOfCampaignFireTimes);
 
         CampaignRecord campaignRecord = campaignRecordService.findByName("DayOfWeekCampaign");
-        campaignRecord.setMaxDuration("3 Weeks");
+        campaignRecord.setMaxDuration(new Period("3 Weeks"));
 
         synchronized (lock) {
             campaignRecordService.update(campaignRecord);
@@ -121,7 +122,7 @@ public class MessageCampaignLifecycleListenerBundleIT extends BasePaxIT {
                 getFireTimes("org.motechproject.messagecampaign.campaign-completed-EndOfCampaignJob.DayOfWeekCampaign.entity_4-runonce");
         assertEquals(asList(newDateTime(2020, 7, 27, 10, 30, 0)), endOfCampaignFireTimes);
 
-        campaignRecord.setMaxDuration("2 weeks");
+        campaignRecord.setMaxDuration(new Period("2 weeks"));
         campaignRecordService.update(campaignRecord);
     }
 

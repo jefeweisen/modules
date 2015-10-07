@@ -53,8 +53,8 @@ public class CampaignRecordServiceBundleIT extends BasePaxIT {
         assertEquals(2, messages.size());
         DateTime firstDate = new DateTime(2013, 6, 15, 0, 0, 0, 0);
         DateTime secondDate = new DateTime(2013, 6, 22, 0, 0, 0, 0);
-        assertMessageWithAbsoluteSchedule(messages.get(0), "First", new String[]{"IVR", "SMS"}, "random-1", firstDate.toLocalDate());
-        assertMessageWithAbsoluteSchedule(messages.get(1), "Second", new String[]{"IVR"}, "random-2", secondDate.toLocalDate());
+        assertMessageWithAbsoluteSchedule(campaign, messages.get(0), "First", new String[]{"IVR", "SMS"}, "random-1", firstDate.toLocalDate());
+        assertMessageWithAbsoluteSchedule(campaign, messages.get(1), "Second", new String[]{"IVR"}, "random-2", secondDate.toLocalDate());
     }
 
     @Test
@@ -66,9 +66,9 @@ public class CampaignRecordServiceBundleIT extends BasePaxIT {
         assertEquals(campaignName, campaign.getName());
         List<CampaignMessage> messages = campaign.getMessages();
         assertEquals(3, messages.size());
-        assertMessageWithRelativeSchedule(campaign, messages.get(0), "Week 1", new String[]{"IVR"}, "child-info-week-1", "1 Week", campaign);
-        assertMessageWithRelativeSchedule(campaign, messages.get(1), "Week 1A", new String[]{"SMS"}, "child-info-week-1a", "1 Week", campaign);
-        assertMessageWithRelativeSchedule(campaign, messages.get(2), "Week 1B", new String[]{"SMS"}, "child-info-week-1b", "9 Days", campaign);
+        assertMessageWithRelativeSchedule(campaign, messages.get(0), "Week 1", new String[]{"IVR"}, "child-info-week-1", "1 Week");
+        assertMessageWithRelativeSchedule(campaign, messages.get(1), "Week 1A", new String[]{"SMS"}, "child-info-week-1a", "1 Week");
+        assertMessageWithRelativeSchedule(campaign, messages.get(2), "Week 1B", new String[]{"SMS"}, "child-info-week-1b", "9 Days");
     }
 
     @Test
@@ -81,7 +81,7 @@ public class CampaignRecordServiceBundleIT extends BasePaxIT {
         assertEquals(new JodaFormatter().parsePeriod("5 years"), campaign.getMaxDuration());
         List<CampaignMessage> messages = campaign.getMessages();
         assertEquals(1, messages.size());
-        assertMessageWithCronSchedule(messages.get(0), "First", new String[]{"IVR", "SMS"}, "cron-message", "0 11 11 11 11 ?");
+        assertMessageWithCronSchedule(campaign, messages.get(0), "First", new String[]{"IVR", "SMS"}, "cron-message", "0 11 11 11 11 ?");
     }
 
     @Test
@@ -100,7 +100,7 @@ public class CampaignRecordServiceBundleIT extends BasePaxIT {
             protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
                 // update
                 CampaignRecord campaignToUpdate = campaignRecordService.findByName(campaign.getName());
-                campaign2.setMaxDuration("20 week");
+                campaign2.setMaxDuration(new Period("20 week"));
                 campaignToUpdate.updateFrom(campaign2);
 
                 campaignRecordService.update(campaignToUpdate);
@@ -143,19 +143,19 @@ public class CampaignRecordServiceBundleIT extends BasePaxIT {
         campaignRecordService.delete(campaign2);
     }
 
-    private void assertMessageWithAbsoluteSchedule(CampaignMessage message, String name, String[] formats, Object messageKey, LocalDate date) {
+    private void assertMessageWithAbsoluteSchedule(AbsoluteCampaign campaign, CampaignMessage message, String name, String[] formats, Object messageKey, LocalDate date) {
         assertMessage(message, name, formats, messageKey);
-        assertEquals(date, message.getDate());
+        assertEquals(date, campaign.getDate(message));
     }
 
-    private void assertMessageWithRelativeSchedule(OffsetCampaign campaign, CampaignMessage message, String name, String[] formats, Object messageKey, String timeOffset, OffsetCampaign campaign) {
+    private void assertMessageWithRelativeSchedule(OffsetCampaign campaign, CampaignMessage message, String name, String[] formats, Object messageKey, String timeOffset) {
         assertMessage(message, name, formats, messageKey);
-        assertEquals(new JodaFormatter().parsePeriod(timeOffset), campaign.getTimeOffset(message));
+        assertEquals(new JodaFormatter().parsePeriod(timeOffset), campaign.getTimeOffset());
     }
 
-    private void assertMessageWithCronSchedule(CampaignMessage message, String name, String[] formats, Object messageKey, String cron) {
+    private void assertMessageWithCronSchedule(CronBasedCampaign campaign, CampaignMessage message, String name, String[] formats, Object messageKey, String cron) {
         assertMessage(message, name, formats, messageKey);
-        assertEquals(cron, message.getCron());
+        assertEquals(cron, campaign.getCron(message));
     }
 
     private void assertMessage(CampaignMessage message, String name, String[] formats, Object messageKey) {
@@ -172,7 +172,7 @@ public class CampaignRecordServiceBundleIT extends BasePaxIT {
     private CampaignRecord createCampaignRecord() {
         CampaignRecord campaign = new CampaignRecord();
         campaign.setCampaignType(CampaignType.ABSOLUTE);
-        campaign.setMaxDuration("10 week");
+        campaign.setMaxDuration(new Period("10 week"));
         campaign.setName("CampaignName");
 
         CampaignMessageRecord message = new CampaignMessageRecord();
