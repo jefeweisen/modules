@@ -4,13 +4,14 @@ import org.junit.Test;
 import org.motechproject.commons.date.util.JodaFormatter;
 import org.motechproject.messagecampaign.builder.CampaignMessageRecordTestBuilder;
 import org.motechproject.messagecampaign.builder.CampaignRecordBuilder;
+import org.motechproject.messagecampaign.domain.message.CampaignMessage;
 
 import java.util.List;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertTrue;
 
-public class CampaignRecurrenceTest {
+public class CampaignRecordTest {
 
     private CampaignRecord campaignRecord;
     private CampaignMessageRecord messageRecord;
