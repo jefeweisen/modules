@@ -24,6 +24,7 @@ public abstract class Campaign {
      * The name of the campaign.
      */
     private String name;
+    private CampaignType2 campaignType2;
     private List<CampaignMessage> messages;
     private CampaignRecord campaignRecord;
 
@@ -45,6 +46,7 @@ public abstract class Campaign {
 
     protected Campaign(String name, List<CampaignMessage> messages, Period maxDuration) {
         this.name = name;
+        this.campaignType2 = null;
         this.messages = messages;
         // TODO: this.maxDuration = maxDuration;
     }
