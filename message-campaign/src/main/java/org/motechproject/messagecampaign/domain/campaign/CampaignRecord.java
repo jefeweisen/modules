@@ -39,16 +39,20 @@ public class CampaignRecord {
     /**
      * A list of campaign messages, that are delivered as a part of this campaign.
      */
-    @UIDisplayable(position = 3)
+    @UIDisplayable(position = 4)
     @Field
     @Persistent(mappedBy = "campaign")
     @Cascade(delete = true)
     private List<CampaignMessageRecord> messages = new ArrayList<>();
 
+    @UIDisplayable(position = 1)
+    @Field(required = false, tooltip = "The CampaignType determines the type of message that will apply to the campaign")
+    private CampaignType2 campaignType2;
+
     /**
      * The type of this campaign.
      */
-    @UIDisplayable(position = 1)
+    @UIDisplayable(position = 2)
     @Field(required = true, tooltip = "The CampaignType determines the type of message that will apply to the campaign")
     private CampaignType campaignType;
 
@@ -58,7 +62,7 @@ public class CampaignRecord {
     /**
      * Specifies the maximum duration of this message campaign.
      */
-    @UIDisplayable(position = 2)
+    @UIDisplayable(position = 3)
     @Field(tooltip = "Specifies the maximum duration of the campaign", placeholder = "1 week")
 
     /**
@@ -158,5 +162,13 @@ public class CampaignRecord {
     @Override
     public String toString() {
         return name;
+    }
+
+    public CampaignType2 getCampaignType2() {
+        return campaignType2;
+    }
+
+    public void setCampaignType2(CampaignType2 campaignType2) {
+        this.campaignType2 = campaignType2;
     }
 }
