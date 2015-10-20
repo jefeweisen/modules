@@ -1,6 +1,8 @@
 package org.motechproject.messagecampaign.domain.campaign;
 
 import org.joda.time.Period;
+import org.motechproject.messagecampaign.domain.message.CampaignMessage;
+import org.motechproject.messagecampaign.exception.CampaignMessageValidationException;
 import org.motechproject.messagecampaign.exception.CampaignValidationException;
 
 import java.util.List;
@@ -11,19 +13,21 @@ import java.util.List;
  *
  * @see DayOfWeekCampaignMessage
  */
-public class DayOfWeekCampaign extends Campaign<DayOfWeekCampaignMessage> {
+public class DayOfWeekCampaign extends Campaign {
+
+    private List<DayOfWeek> daysOfWeek;
 
     public DayOfWeekCampaign() {
 
     }
 
-    public DayOfWeekCampaign(String name, List<DayOfWeekCampaignMessage> messages, Period maxDuration) {
+    public DayOfWeekCampaign(String name, List<CampaignMessage> messages, Period maxDuration) {
         super(name, messages, maxDuration);
     }
 
     @Override
-    public DayOfWeekCampaignMessage getCampaignMessage(CampaignMessageRecord messageRecord) {
-        return new DayOfWeekCampaignMessage(messageRecord);
+    public CampaignMessage getCampaignMessage(CampaignMessageRecord messageRecord) {
+        return new CampaignMessage(messageRecord);
     }
 
     @Override
@@ -34,4 +38,16 @@ public class DayOfWeekCampaign extends Campaign<DayOfWeekCampaignMessage> {
         }
     }
 
+    @Override
+    public void validate2(CampaignMessage cm) {
+        if (daysOfWeek == null) {
+            throw new CampaignMessageValidationException("DaysOfWeek cannot be null in " + DayOfWeekCampaign.class.getName());
+        } else if (getStartTime(cm) == null) {
+            throw new CampaignMessageValidationException("StartTime cannot be null in " + DayOfWeekCampaign.class.getName());
+        }
+    }
+
+    public List<DayOfWeek> getDaysOfWeek(CampaignMessage cm) {
+        return daysOfWeek;
+    }
 }

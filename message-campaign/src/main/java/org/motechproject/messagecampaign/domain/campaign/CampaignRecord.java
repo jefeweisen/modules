@@ -13,6 +13,7 @@ import javax.jdo.annotations.Unique;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import org.joda.time.Period;
 
 /**
  * Domain representation of a message campaign.
@@ -38,25 +39,31 @@ public class CampaignRecord {
     /**
      * A list of campaign messages, that are delivered as a part of this campaign.
      */
-    @UIDisplayable(position = 3)
+    @UIDisplayable(position = 4)
     @Field
     @Persistent(mappedBy = "campaign")
     @Cascade(delete = true)
     private List<CampaignMessageRecord> messages = new ArrayList<>();
 
+    @UIDisplayable(position = 1)
+    @Field(required = false, tooltip = "The CampaignType determines the type of message that will apply to the campaign")
+    private CampaignType2 campaignType2;
+
     /**
      * The type of this campaign.
      */
-    @UIDisplayable(position = 1)
+    @UIDisplayable(position = 2)
     @Field(required = true, tooltip = "The CampaignType determines the type of message that will apply to the campaign")
     private CampaignType campaignType;
+
+    @Field
+    private Period maxDuration;
 
     /**
      * Specifies the maximum duration of this message campaign.
      */
-    @UIDisplayable(position = 2)
+    @UIDisplayable(position = 3)
     @Field(tooltip = "Specifies the maximum duration of the campaign", placeholder = "1 week")
-    private String maxDuration;
 
     /**
      * Converts this domain representation to the specialized representation of a {@link Campaign},
@@ -69,7 +76,7 @@ public class CampaignRecord {
 
         campaign.setMessageRecords(messages);
         campaign.setName(name);
-        campaign.setMaxDuration(maxDuration);
+        campaign.setCampaignRecord(this);
 
         return campaign;
     }
@@ -98,11 +105,11 @@ public class CampaignRecord {
         this.campaignType = type;
     }
 
-    public String getMaxDuration() {
+    public Period getMaxDuration() {
         return maxDuration;
     }
 
-    public void setMaxDuration(String maxDuration) {
+    public void setMaxDuration(Period maxDuration) {
         this.maxDuration = maxDuration;
     }
 
@@ -155,5 +162,13 @@ public class CampaignRecord {
     @Override
     public String toString() {
         return name;
+    }
+
+    public CampaignType2 getCampaignType2() {
+        return campaignType2;
+    }
+
+    public void setCampaignType2(CampaignType2 campaignType2) {
+        this.campaignType2 = campaignType2;
     }
 }

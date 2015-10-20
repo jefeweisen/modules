@@ -9,8 +9,7 @@ import org.motechproject.messagecampaign.EventKeys;
 import org.motechproject.messagecampaign.dao.CampaignRecordService;
 import org.motechproject.messagecampaign.domain.campaign.AbsoluteCampaign;
 import org.motechproject.messagecampaign.domain.campaign.CampaignEnrollment;
-import org.motechproject.messagecampaign.domain.campaign.AbsoluteCampaignMessage;
-import org.motechproject.messagecampaign.domain.campaign.CampaignMessage;
+import org.motechproject.messagecampaign.domain.message.CampaignMessage;
 import org.motechproject.scheduler.contract.JobId;
 import org.motechproject.scheduler.contract.RunOnceJobId;
 import org.motechproject.scheduler.contract.RunOnceSchedulableJob;
@@ -29,7 +28,7 @@ import static org.motechproject.commons.date.util.DateUtil.newDateTime;
  * @see AbsoluteCampaignMessage
  */
 @Component
-public class AbsoluteCampaignSchedulerService extends CampaignSchedulerService<AbsoluteCampaignMessage, AbsoluteCampaign> {
+public class AbsoluteCampaignSchedulerService extends CampaignSchedulerService<CampaignMessage, AbsoluteCampaign> {
 
     private static final Logger LOGGER = Logger.getLogger(AbsoluteCampaignSchedulerService.class);
 
@@ -39,10 +38,10 @@ public class AbsoluteCampaignSchedulerService extends CampaignSchedulerService<A
     }
 
     @Override
-    protected void scheduleMessageJob(CampaignEnrollment enrollment, AbsoluteCampaign campaign, AbsoluteCampaignMessage campaignMessage) {
+    protected void scheduleMessageJob(CampaignEnrollment enrollment, AbsoluteCampaign campaign, CampaignMessage campaignMessage) {
         Map<String, Object> params = jobParams(campaignMessage.getMessageKey(), enrollment);
         MotechEvent motechEvent = new MotechEvent(EventKeys.SEND_MESSAGE, params);
-        LocalDate startDate = campaignMessage.getDate();
+        LocalDate startDate = campaign.getDate(campaignMessage);
         RunOnceSchedulableJob runOnceSchedulableJob = new RunOnceSchedulableJob(motechEvent, newDateTime(startDate, deliverTimeFor(enrollment, campaignMessage)).toDate());
 
         try {
@@ -55,7 +54,7 @@ public class AbsoluteCampaignSchedulerService extends CampaignSchedulerService<A
     @Override
     public void unscheduleMessageJobs(CampaignEnrollment enrollment) {
         AbsoluteCampaign campaign = (AbsoluteCampaign) getCampaignRecordService().findByName(enrollment.getCampaignName()).toCampaign();
-        for (AbsoluteCampaignMessage message : campaign.getMessages()) {
+        for (CampaignMessage message : campaign.getMessages()) {
             getSchedulerService().safeUnscheduleRunOnceJob(EventKeys.SEND_MESSAGE, messageJobIdFor(message.getMessageKey(), enrollment.getExternalId(), enrollment.getCampaignName()));
         }
     }
@@ -73,8 +72,8 @@ public class AbsoluteCampaignSchedulerService extends CampaignSchedulerService<A
     @Override
     protected DateTime campaignEndDate(AbsoluteCampaign campaign, CampaignEnrollment enrollment) {
         DateTime endDate = null;
-        for (AbsoluteCampaignMessage msg : campaign.getMessages()) {
-            DateTime fireTime = DateUtil.newDateTime(msg.getDate(), deliverTimeFor(enrollment, msg));
+        for (CampaignMessage msg : campaign.getMessages()) {
+            DateTime fireTime = DateUtil.newDateTime(campaign.getDate(msg), deliverTimeFor(enrollment, msg));
             if (endDate == null || fireTime.isAfter(endDate)) {
                 endDate = fireTime;
             }

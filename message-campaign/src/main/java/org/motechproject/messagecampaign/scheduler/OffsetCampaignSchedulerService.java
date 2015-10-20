@@ -9,9 +9,8 @@ import org.motechproject.event.MotechEvent;
 import org.motechproject.messagecampaign.EventKeys;
 import org.motechproject.messagecampaign.dao.CampaignRecordService;
 import org.motechproject.messagecampaign.domain.campaign.CampaignEnrollment;
-import org.motechproject.messagecampaign.domain.campaign.CampaignMessage;
+import org.motechproject.messagecampaign.domain.message.CampaignMessage;
 import org.motechproject.messagecampaign.domain.campaign.OffsetCampaign;
-import org.motechproject.messagecampaign.domain.campaign.OffsetCampaignMessage;
 import org.motechproject.scheduler.contract.JobId;
 import org.motechproject.scheduler.contract.RunOnceJobId;
 import org.motechproject.scheduler.contract.RunOnceSchedulableJob;
@@ -26,10 +25,9 @@ import static org.motechproject.commons.date.util.DateUtil.now;
  * Scheduler service, responsible for scheduling/unscheduling jobs for the {@link OffsetCampaign}s.
  *
  * @see OffsetCampaign
- * @see OffsetCampaignMessage
  */
 @Component
-public class OffsetCampaignSchedulerService extends CampaignSchedulerService<OffsetCampaignMessage, OffsetCampaign> {
+public class OffsetCampaignSchedulerService extends CampaignSchedulerService<CampaignMessage, OffsetCampaign> {
 
     private static final Logger LOGGER = Logger.getLogger(OffsetCampaignSchedulerService.class);
 
@@ -39,10 +37,10 @@ public class OffsetCampaignSchedulerService extends CampaignSchedulerService<Off
     }
 
     @Override
-    protected void scheduleMessageJob(CampaignEnrollment enrollment, OffsetCampaign campaign, OffsetCampaignMessage message) {
+    protected void scheduleMessageJob(CampaignEnrollment enrollment, OffsetCampaign campaign, CampaignMessage message) {
         Time deliverTime = deliverTimeFor(enrollment, message);
         DateTime jobTime = (newDateTime(enrollment.getReferenceDate(), deliverTime)).toLocalDateTime()
-                .plus(message.getTimeOffset()).toDateTime();
+                .plus(campaign.getTimeOffset()).toDateTime();
 
         if (jobTime.isAfter(now())) {
             MotechEvent motechEvent = new MotechEvent(EventKeys.SEND_MESSAGE, jobParams(message.getMessageKey(), enrollment));
@@ -60,7 +58,7 @@ public class OffsetCampaignSchedulerService extends CampaignSchedulerService<Off
     @Override
     public void unscheduleMessageJobs(CampaignEnrollment enrollment) {
         OffsetCampaign campaign = (OffsetCampaign) getCampaignRecordService().findByName(enrollment.getCampaignName()).toCampaign();
-        for (OffsetCampaignMessage message : campaign.getMessages()) {
+        for (CampaignMessage message : campaign.getMessages()) {
             getSchedulerService().safeUnscheduleRunOnceJob(EventKeys.SEND_MESSAGE, messageJobIdFor(message.getMessageKey(), enrollment.getExternalId(), enrollment.getCampaignName()));
         }
     }
@@ -80,9 +78,9 @@ public class OffsetCampaignSchedulerService extends CampaignSchedulerService<Off
         LocalDate startDate = enrollment.getReferenceDate();
         DateTime lastFireTime = null;
 
-        for (OffsetCampaignMessage msg : campaign.getMessages()) {
+        for (CampaignMessage msg : campaign.getMessages()) {
             Time deliverTime = deliverTimeFor(enrollment, msg);
-            DateTime fireDate = DateUtil.newDateTime(startDate, deliverTime).plus(msg.getTimeOffset());
+            DateTime fireDate = DateUtil.newDateTime(startDate, deliverTime).plus(campaign.getTimeOffset());
 
             if (lastFireTime == null || fireDate.isAfter(lastFireTime)) {
                 lastFireTime = fireDate;

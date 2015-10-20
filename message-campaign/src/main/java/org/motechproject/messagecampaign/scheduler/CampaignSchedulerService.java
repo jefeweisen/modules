@@ -8,7 +8,7 @@ import org.motechproject.messagecampaign.builder.SchedulerPayloadBuilder;
 import org.motechproject.messagecampaign.dao.CampaignRecordService;
 import org.motechproject.messagecampaign.domain.campaign.Campaign;
 import org.motechproject.messagecampaign.domain.campaign.CampaignEnrollment;
-import org.motechproject.messagecampaign.domain.campaign.CampaignMessage;
+import org.motechproject.messagecampaign.domain.message.CampaignMessage;
 import org.motechproject.messagecampaign.exception.CampaignEnrollmentException;
 import org.motechproject.scheduler.contract.JobId;
 import org.motechproject.scheduler.contract.RunOnceSchedulableJob;
@@ -26,7 +26,7 @@ import java.util.Map;
  * @param <M> Type of {@link CampaignMessage}
  * @param <C> Type of {@link Campaign}
  */
-public abstract class CampaignSchedulerService<M extends CampaignMessage, C extends Campaign<M>> {
+public abstract class CampaignSchedulerService<M extends CampaignMessage, C extends Campaign> {
     private MotechSchedulerService schedulerService;
     private CampaignRecordService campaignRecordService;
     private JobIdFactory jobIdFactory;
@@ -46,7 +46,7 @@ public abstract class CampaignSchedulerService<M extends CampaignMessage, C exte
      */
     public void start(CampaignEnrollment enrollment) {
         C campaign = (C) getCampaignRecordService().findByName(enrollment.getCampaignName()).toCampaign();
-        for (M message : campaign.getMessages()) {
+        for (CampaignMessage message : campaign.getMessages()) {
             scheduleMessageJob(enrollment, campaign, message);
         }
 
@@ -132,7 +132,7 @@ public abstract class CampaignSchedulerService<M extends CampaignMessage, C exte
     protected Map<String, List<DateTime>> getCampaignTimings(DateTime startDate, DateTime endDate, CampaignEnrollment enrollment,
                                                              C campaign) {
         Map<String, List<DateTime>> messageTimingsMap = new HashMap<>();
-        for (M message : campaign.getMessages()) {
+        for (CampaignMessage message : campaign.getMessages()) {
             String externalJobIdPrefix = messageJobIdFor(message.getMessageKey(), enrollment.getExternalId(), enrollment.getCampaignName());
             List<DateTime> dates = convertToDateTimeList(schedulerService.getScheduledJobTimingsWithPrefix(EventKeys.SEND_MESSAGE, externalJobIdPrefix, startDate.toDate(), endDate.toDate()));
 
@@ -158,7 +158,7 @@ public abstract class CampaignSchedulerService<M extends CampaignMessage, C exte
      * @param campaign the campaign definition
      * @param message the message to schedule
      */
-    protected abstract void scheduleMessageJob(CampaignEnrollment enrollment, C campaign, M message);
+    protected abstract void scheduleMessageJob(CampaignEnrollment enrollment, C campaign, CampaignMessage message);
 
     /**
      * Returns the delivery time, for the given {@link CampaignMessage}, that belongs to the provided {@link CampaignEnrollment}.

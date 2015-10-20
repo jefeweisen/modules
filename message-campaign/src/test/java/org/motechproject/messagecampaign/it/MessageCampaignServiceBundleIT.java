@@ -2,6 +2,7 @@ package org.motechproject.messagecampaign.it;
 
 import org.joda.time.DateTime;
 import org.joda.time.LocalDate;
+import org.joda.time.Period;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -93,7 +94,7 @@ public class MessageCampaignServiceBundleIT extends BasePaxIT {
             @Override
             protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
                 CampaignRecord campaignRecord = campaignRecordService.findByName("DayOfWeekCampaign");
-                campaignRecord.setMaxDuration("3 Weeks");
+                campaignRecord.setMaxDuration(new Period("3 Weeks"));
                 campaignRecordService.update(campaignRecord);
             }
         });
@@ -122,7 +123,7 @@ public class MessageCampaignServiceBundleIT extends BasePaxIT {
             @Override
             protected void doInTransactionWithoutResult(TransactionStatus transactionStatus) {
                 CampaignRecord campaignRecordToUpdate = campaignRecordService.findByName("DayOfWeekCampaign");
-                campaignRecordToUpdate.setMaxDuration("2 weeks");
+                campaignRecordToUpdate.setMaxDuration(new Period("2 weeks"));
                 campaignRecordService.update(campaignRecordToUpdate);
             }
         });

@@ -17,14 +17,8 @@ import org.motechproject.messagecampaign.contract.CampaignRequest;
 import org.motechproject.messagecampaign.dao.CampaignEnrollmentDataService;
 import org.motechproject.messagecampaign.dao.CampaignMessageRecordService;
 import org.motechproject.messagecampaign.dao.CampaignRecordService;
-import org.motechproject.messagecampaign.domain.campaign.AbsoluteCampaign;
-import org.motechproject.messagecampaign.domain.campaign.Campaign;
-import org.motechproject.messagecampaign.domain.campaign.CampaignEnrollment;
-import org.motechproject.messagecampaign.domain.campaign.CampaignEnrollmentStatus;
-import org.motechproject.messagecampaign.domain.campaign.CampaignRecord;
-import org.motechproject.messagecampaign.domain.campaign.CampaignType;
-import org.motechproject.messagecampaign.domain.campaign.CronBasedCampaign;
-import org.motechproject.messagecampaign.domain.campaign.CronBasedCampaignMessage;
+import org.motechproject.messagecampaign.domain.campaign.*;
+import org.motechproject.messagecampaign.domain.message.CampaignMessage;
 import org.motechproject.messagecampaign.exception.CampaignNotFoundException;
 import org.motechproject.messagecampaign.exception.EnrollmentAlreadyExists;
 import org.motechproject.messagecampaign.exception.EnrollmentNotFoundException;
@@ -381,9 +375,9 @@ public class MessageCampaignServiceImplTest {
         record.setCampaignType(CampaignType.CRON);
         record.setName("campaignName");
 
-        CronBasedCampaignMessage messageRecord1 = new CronBasedCampaignMessage("0 11 11 11 11 ?");
+        CampaignMessage messageRecord1 = new CampaignMessage("0 11 11 11 11 ?");
         messageRecord1.setMessageKey("messageKey1");
-        CronBasedCampaignMessage messageRecord2 = new CronBasedCampaignMessage("0 11 11 11 11 ?");
+        CampaignMessage messageRecord2 = new CampaignMessage("0 11 11 11 11 ?");
         messageRecord2.setMessageKey("messageKey2");
 
         CronBasedCampaign campaign = new CronBasedCampaign("campaignName", asList(messageRecord1, messageRecord2));
@@ -416,7 +410,7 @@ public class MessageCampaignServiceImplTest {
         record.setCampaignType(CampaignType.CRON);
         record.setName("campaignName");
 
-        CronBasedCampaignMessage messageRecord1 = new CronBasedCampaignMessage("0 11 11 11 11 ?");
+        CampaignMessage messageRecord1 = new CampaignMessage("0 11 11 11 11 ?");
         messageRecord1.setMessageKey("messageKey1");
 
         CronBasedCampaign campaign = new CronBasedCampaign("campaignName", asList(messageRecord1));
@@ -445,9 +439,9 @@ public class MessageCampaignServiceImplTest {
         record.setCampaignType(CampaignType.CRON);
         record.setName("campaignName");
 
-        CronBasedCampaignMessage messageRecord1 = new CronBasedCampaignMessage("0 11 11 11 11 ?");
+        CampaignMessage messageRecord1 = new CampaignMessage("0 11 11 11 11 ?");
         messageRecord1.setMessageKey("messageKey1");
-        CronBasedCampaignMessage messageRecord2 = new CronBasedCampaignMessage("0 11 11 11 11 ?");
+        CampaignMessage messageRecord2 = new CampaignMessage("0 11 11 11 11 ?");
         messageRecord2.setMessageKey("messageKey2");
 
         CronBasedCampaign campaign = new CronBasedCampaign("campaignName", asList(messageRecord1, messageRecord2));
@@ -480,7 +474,7 @@ public class MessageCampaignServiceImplTest {
         record.setCampaignType(CampaignType.CRON);
         record.setName("campaignName");
 
-        CronBasedCampaignMessage messageRecord1 = new CronBasedCampaignMessage("0 11 11 11 11 ?");
+        CampaignMessage messageRecord1 = new CampaignMessage("0 11 11 11 11 ?");
         messageRecord1.setMessageKey("messageKey1");
 
         CronBasedCampaign campaign = new CronBasedCampaign("campaignName", asList(messageRecord1));

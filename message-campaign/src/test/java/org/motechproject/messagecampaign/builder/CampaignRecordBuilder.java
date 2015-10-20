@@ -1,8 +1,9 @@
 package org.motechproject.messagecampaign.builder;
 
+import org.joda.time.Period;
+import org.motechproject.messagecampaign.domain.campaign.CampaignRecord;
 import org.motechproject.messagecampaign.domain.campaign.CampaignType;
 import org.motechproject.messagecampaign.domain.campaign.CampaignMessageRecord;
-import org.motechproject.messagecampaign.domain.campaign.CampaignRecord;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,7 +29,7 @@ public final class CampaignRecordBuilder {
         CampaignRecord record = new CampaignRecord();
         record.setName(name);
         record.setCampaignType(CampaignType.OFFSET);
-        record.setMaxDuration("2 Weeks");
+        record.setMaxDuration(new Period("2 Weeks"));
         record.setMessages(campaignMessageRecords);
 
         return record;

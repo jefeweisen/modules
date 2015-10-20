@@ -1,8 +1,9 @@
 package org.motechproject.messagecampaign.domain.campaign;
 
 import org.joda.time.Period;
-import org.motechproject.commons.date.util.JodaFormatter;
+import org.motechproject.commons.date.model.Time;
 import org.motechproject.messagecampaign.exception.CampaignValidationException;
+import org.motechproject.messagecampaign.domain.message.CampaignMessage;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -18,35 +19,36 @@ import java.util.List;
  * @see {@link RepeatIntervalCampaign}
  * @param <T> the type of messages sent during campaign; must extend base class {@link CampaignMessage}
  */
-public abstract class Campaign<T extends CampaignMessage> {
-
+public abstract class Campaign {
     /**
      * The name of the campaign.
      */
     private String name;
+    private CampaignType2 campaignType2;
+    private List<CampaignMessage> messages;
+    private CampaignRecord campaignRecord;
 
     /**
      * The list of messages to be sent during campaign.
      */
-    private List<T> messages;
 
     /**
      * The maximum duration, for which the campaign will run.
      */
-    private Period maxDuration;
 
     public Campaign () {
 
     }
 
-    public Campaign (String name, List<T> messages) {
+    public Campaign (String name, List<CampaignMessage> messages) {
         this(name, messages, null);
     }
 
-    protected Campaign(String name, List<T> messages, Period maxDuration) {
+    protected Campaign(String name, List<CampaignMessage> messages, Period maxDuration) {
         this.name = name;
+        this.campaignType2 = null;
         this.messages = messages;
-        this.maxDuration = maxDuration;
+        // TODO: this.maxDuration = maxDuration;
     }
 
     public String getName() {
@@ -57,26 +59,20 @@ public abstract class Campaign<T extends CampaignMessage> {
         this.name = name;
     }
 
-    public List<T> getMessages() {
+    public List<CampaignMessage> getMessages() {
         return messages;
     }
 
-    public void setMessages(List<T> messages) {
+    public void setMessages(List<CampaignMessage> messages) {
         this.messages = messages;
     }
 
     public Period getMaxDuration() {
-        return maxDuration;
+        return getCampaignRecord().getMaxDuration();
     }
 
     public void setMaxDuration(Period maxDuration) {
-        this.maxDuration = maxDuration;
-    }
-
-    public void setMaxDuration(String maxDuration) {
-        if (maxDuration != null) {
-            this.maxDuration = new JodaFormatter().parsePeriod(maxDuration);
-        }
+        getCampaignRecord().setMaxDuration(maxDuration);
     }
 
     /**
@@ -85,9 +81,9 @@ public abstract class Campaign<T extends CampaignMessage> {
      * @param messageRecords a list of {@link CampaignMessageRecord}
      */
     public void setMessageRecords(List<CampaignMessageRecord> messageRecords) {
-        List<T> campaignMessages = new ArrayList<>();
+        List<CampaignMessage> campaignMessages = new ArrayList<>();
         for (CampaignMessageRecord messageRecord : messageRecords) {
-            T campaignMessage = getCampaignMessage(messageRecord);
+            CampaignMessage campaignMessage = getCampaignMessage(messageRecord);
             campaignMessages.add(campaignMessage);
         }
         setMessages(campaignMessages);
@@ -100,7 +96,12 @@ public abstract class Campaign<T extends CampaignMessage> {
      * @param messageRecord domain representation of the campaign message
      * @return message converted to the type supported by this campaign
      */
-    public abstract T getCampaignMessage(CampaignMessageRecord messageRecord);
+    public abstract CampaignMessage getCampaignMessage(CampaignMessageRecord messageRecord);
+
+    public Time getStartTime(CampaignMessage cm) {
+        throw new RuntimeException("TODO: Not implemented");
+    }
+
 
     /**
      * A general validator for the created campaigns. It also triggers validation of all the
@@ -115,8 +116,19 @@ public abstract class Campaign<T extends CampaignMessage> {
         } else if (messages == null || messages.isEmpty()) {
             throw new CampaignValidationException("Messages cannot be null or empty in " + name);
         }
-        for (T campaignMessage : getMessages() ) {
+        for (CampaignMessage campaignMessage : getMessages() ) {
             campaignMessage.validate();
         }
+    }
+
+    public void validate2(CampaignMessage cm) {
+    }
+
+    public CampaignRecord getCampaignRecord() {
+        return campaignRecord;
+    }
+
+    public void setCampaignRecord(CampaignRecord campaignRecord) {
+        this.campaignRecord = campaignRecord;
     }
 }

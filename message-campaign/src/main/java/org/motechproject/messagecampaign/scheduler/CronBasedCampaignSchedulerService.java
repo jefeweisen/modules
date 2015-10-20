@@ -7,9 +7,8 @@ import org.motechproject.event.MotechEvent;
 import org.motechproject.messagecampaign.EventKeys;
 import org.motechproject.messagecampaign.dao.CampaignRecordService;
 import org.motechproject.messagecampaign.domain.campaign.CampaignEnrollment;
-import org.motechproject.messagecampaign.domain.campaign.CampaignMessage;
+import org.motechproject.messagecampaign.domain.message.CampaignMessage;
 import org.motechproject.messagecampaign.domain.campaign.CronBasedCampaign;
-import org.motechproject.messagecampaign.domain.campaign.CronBasedCampaignMessage;
 import org.motechproject.scheduler.contract.CronJobId;
 import org.motechproject.scheduler.contract.CronSchedulableJob;
 import org.motechproject.scheduler.contract.JobId;
@@ -25,10 +24,9 @@ import java.util.Map;
  * Scheduler service, responsible for scheduling/unscheduling jobs for the {@link CronBasedCampaign}s.
  *
  * @see CronBasedCampaign
- * @see CronBasedCampaignMessage
  */
 @Component
-public class CronBasedCampaignSchedulerService extends CampaignSchedulerService<CronBasedCampaignMessage, CronBasedCampaign> {
+public class CronBasedCampaignSchedulerService extends CampaignSchedulerService<CampaignMessage, CronBasedCampaign> {
 
     @Autowired
     public CronBasedCampaignSchedulerService(MotechSchedulerService schedulerService, CampaignRecordService campaignRecordService) {
@@ -36,21 +34,21 @@ public class CronBasedCampaignSchedulerService extends CampaignSchedulerService<
     }
 
     @Override
-    protected void scheduleMessageJob(CampaignEnrollment enrollment, CronBasedCampaign campaign, CronBasedCampaignMessage message) {
+    protected void scheduleMessageJob(CampaignEnrollment enrollment, CronBasedCampaign campaign, CampaignMessage message) {
         MotechEvent motechEvent = new MotechEvent(EventKeys.SEND_MESSAGE, jobParams(message.getMessageKey(), enrollment));
 
         LocalDate startDate = enrollment.getReferenceDate();
         Period maxDuration = campaign.getMaxDuration();
         Date endDate = (maxDuration == null) ? null : startDate.plus(maxDuration).toDate();
 
-        CronSchedulableJob schedulableJob = new CronSchedulableJob(motechEvent, message.getCron(), startDate.toDate(), endDate);
+        CronSchedulableJob schedulableJob = new CronSchedulableJob(motechEvent, campaign.getCron(message), startDate.toDate(), endDate);
         getSchedulerService().scheduleJob(schedulableJob);
     }
 
     @Override
     public void unscheduleMessageJobs(CampaignEnrollment enrollment) {
         CronBasedCampaign campaign = (CronBasedCampaign) getCampaignRecordService().findByName(enrollment.getCampaignName()).toCampaign();
-        for (CronBasedCampaignMessage message : campaign.getMessages()) {
+        for (CampaignMessage message : campaign.getMessages()) {
             getSchedulerService().safeUnscheduleJob(EventKeys.SEND_MESSAGE, messageJobIdFor(message.getMessageKey(), enrollment.getExternalId(), enrollment.getCampaignName()));
         }
     }

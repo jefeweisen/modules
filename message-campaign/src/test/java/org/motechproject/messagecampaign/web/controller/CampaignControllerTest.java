@@ -2,15 +2,16 @@ package org.motechproject.messagecampaign.web.controller;
 
 import org.apache.commons.io.IOUtils;
 import org.joda.time.LocalDate;
+import org.joda.time.Period;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.motechproject.messagecampaign.domain.campaign.CampaignRecord;
 import org.motechproject.messagecampaign.domain.campaign.CampaignType;
 import org.motechproject.messagecampaign.service.MessageCampaignService;
 import org.motechproject.messagecampaign.domain.campaign.CampaignMessageRecord;
-import org.motechproject.messagecampaign.domain.campaign.CampaignRecord;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.server.MockMvc;
@@ -105,10 +106,10 @@ public class CampaignControllerTest {
     @Test
     public void shouldReturnAllCampaign() throws Exception {
         CampaignRecord campaignRecord = createAbsoluteCampaignRecord();
-        CampaignRecord campaignRecord2 = createRepeatIntervalCampaignRecord();
+        CampaignRecord campaignRecurrence2 = createRepeatIntervalCampaignRecord();
 
         when(messageCampaignService.getAllCampaignRecords()).thenReturn(asList(campaignRecord,
-                campaignRecord2));
+                campaignRecurrence2));
 
         final String expectedResponse = loadJson("rest/campaigns/campaignList.json");
 
@@ -165,7 +166,7 @@ public class CampaignControllerTest {
         CampaignRecord campaignRecord = new CampaignRecord();
         campaignRecord.setName(REPEAT_INTERVAL_CAMPAIGN_NAME);
         campaignRecord.setCampaignType(CampaignType.REPEAT_INTERVAL);
-        campaignRecord.setMaxDuration("5 weeks");
+        campaignRecord.setMaxDuration(new Period("5 weeks"));
 
         CampaignMessageRecord campaignMessageRecord = new CampaignMessageRecord();
         campaignMessageRecord.setName("Weekly Message #1");

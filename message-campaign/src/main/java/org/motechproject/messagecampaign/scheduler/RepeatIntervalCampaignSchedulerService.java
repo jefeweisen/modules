@@ -7,9 +7,8 @@ import org.motechproject.event.MotechEvent;
 import org.motechproject.messagecampaign.EventKeys;
 import org.motechproject.messagecampaign.dao.CampaignRecordService;
 import org.motechproject.messagecampaign.domain.campaign.CampaignEnrollment;
-import org.motechproject.messagecampaign.domain.campaign.CampaignMessage;
+import org.motechproject.messagecampaign.domain.message.CampaignMessage;
 import org.motechproject.messagecampaign.domain.campaign.RepeatIntervalCampaign;
-import org.motechproject.messagecampaign.domain.campaign.RepeatIntervalCampaignMessage;
 import org.motechproject.scheduler.contract.JobId;
 import org.motechproject.scheduler.contract.RepeatingJobId;
 import org.motechproject.scheduler.contract.RepeatingSchedulableJob;
@@ -26,10 +25,9 @@ import static org.motechproject.commons.date.util.DateUtil.newDateTime;
  * Scheduler service, responsible for scheduling/unscheduling jobs for the {@link RepeatIntervalCampaign}s.
  *
  * @see RepeatIntervalCampaign
- * @see RepeatIntervalCampaignMessage
  */
 @Component
-public class RepeatIntervalCampaignSchedulerService extends CampaignSchedulerService<RepeatIntervalCampaignMessage, RepeatIntervalCampaign> {
+public class RepeatIntervalCampaignSchedulerService extends CampaignSchedulerService<CampaignMessage, RepeatIntervalCampaign> {
 
     @Autowired
     public RepeatIntervalCampaignSchedulerService(MotechSchedulerService schedulerService, CampaignRecordService campaignRecordService) {
@@ -37,7 +35,7 @@ public class RepeatIntervalCampaignSchedulerService extends CampaignSchedulerSer
     }
 
     @Override
-    protected void scheduleMessageJob(CampaignEnrollment enrollment, RepeatIntervalCampaign campaign, RepeatIntervalCampaignMessage message) {
+    protected void scheduleMessageJob(CampaignEnrollment enrollment, RepeatIntervalCampaign campaign, CampaignMessage message) {
         MotechEvent motechEvent = new MotechEvent(EventKeys.SEND_MESSAGE, jobParams(message.getMessageKey(), enrollment));
         DateTime start = newDateTime(enrollment.getReferenceDate(), deliverTimeFor(enrollment, message));
         DateTime end = start.plus(campaign.getMaxDuration());
@@ -45,7 +43,7 @@ public class RepeatIntervalCampaignSchedulerService extends CampaignSchedulerSer
                 .setMotechEvent(motechEvent)
                 .setStartTime(start.toDate())
                 .setEndTime(end.toDate())
-                .setRepeatIntervalInSeconds(message.getRepeatIntervalInSeconds())
+                .setRepeatIntervalInSeconds(campaign.getRepeatIntervalInSeconds(message))
                 .setIgnorePastFiresAtStart(true)
                 .setUseOriginalFireTimeAfterMisfire(true);
         getSchedulerService().safeScheduleRepeatingJob(job);
@@ -54,7 +52,7 @@ public class RepeatIntervalCampaignSchedulerService extends CampaignSchedulerSer
     @Override
     public void unscheduleMessageJobs(CampaignEnrollment enrollment) {
         RepeatIntervalCampaign campaign = (RepeatIntervalCampaign) getCampaignRecordService().findByName(enrollment.getCampaignName()).toCampaign();
-        for (RepeatIntervalCampaignMessage message : campaign.getMessages()) {
+        for (CampaignMessage message : campaign.getMessages()) {
             getSchedulerService().safeUnscheduleRepeatingJob(EventKeys.SEND_MESSAGE, messageJobIdFor(message.getMessageKey(), enrollment.getExternalId(), enrollment.getCampaignName()));
         }
     }
